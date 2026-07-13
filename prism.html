@@ -1,0 +1,182 @@
+<!--
+  Prism — the hidden spectrum of what you can study.
+  Landing + slider quiz (wheelhouse + stretch recommendations) + the Atlas of Fields graph.
+  Single self-contained file. No external storage.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prism — what your subjects can become</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,600&family=Inter:wght@400;500;600&display=swap"
+  rel="stylesheet">
+  <link rel="stylesheet" href="prism.css">
+
+<header class="nav">
+  <button class="brand" data-go="home" aria-label="Prism home">
+    <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+      <path d="M16 4 L28 26 L4 26 Z" stroke="#c9d2e6" stroke-width="1.6" fill="rgba(255,255,255,0.04)" />
+      <path d="M4 26 L30 20" stroke="#f43f5e" stroke-width="1.4" />
+      <path d="M4 26 L30 22.5" stroke="#f97316" stroke-width="1.4" />
+      <path d="M4 26 L30 25" stroke="#22c55e" stroke-width="1.4" />
+      <path d="M4 26 L30 27.5" stroke="#22d3ee" stroke-width="1.4" />
+      <path d="M4 26 L30 30" stroke="#8b5cf6" stroke-width="1.4" />
+    </svg>
+    <span class="word">Prism</span>
+  </button>
+  <nav class="navlinks">
+    <button data-go="discover">Discover</button>
+    <button data-go="atlas">Atlas</button>
+  </nav>
+</header>
+
+<main>
+  <!-- HOME -->
+  <section class="view active" id="home">
+    <div class="wrap">
+      <div class="hero">
+        <h1>School shows you ten subjects. It hides a <em>thousand fields</em>.</h1>
+        <p class="sub">A prism splits plain white light into a whole spectrum. Prism does the same to the subjects you
+          already take, and turns them into a map of what you could actually study.</p>
+        <div class="cta-row">
+          <button class="btn primary" data-go="discover">Find fields for me</button>
+          <button class="btn" data-go="atlas">Explore the atlas</button>
+        </div>
+        <div class="spectrum-line"></div>
+        <p class="home-note">Nothing here is a test or a verdict. It's a set of doorways to be curious about. You can
+          change your mind as many times as you like.</p>
+      </div>
+      <div class="how">
+        <div class="card">
+          <div class="n">01</div>
+          <h3>Answer a few sliders</h3>
+          <p>Say what you enjoy and how you like to think. Middle means no strong feeling. Two minutes, no wrong
+            answers.</p>
+        </div>
+        <div class="card">
+          <div class="n">02</div>
+          <h3>Get two kinds of fields</h3>
+          <p>The ones squarely in your wheelhouse, and the ones just outside it that tend to surprise people like you.
+          </p>
+        </div>
+        <div class="card">
+          <div class="n">03</div>
+          <h3>See them on the map</h3>
+          <p>Every field is built from school subjects, and coloured by the mix. Follow the lines to see where anything
+            comes from.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DISCOVER / QUIZ -->
+  <section class="view" id="discover">
+    <div class="wrap">
+      <div class="qhead">
+        <h2>A few questions.</h2>
+        <p>Move each slider. The middle means "no strong feeling either way", and it counts for nothing, so only move
+          the ones you have an opinion on. There are no right answers.</p>
+        <button class="qtoggle" id="soundToggle"><span class="dot"></span>Sound on</button>
+      </div>
+      <div class="qsection">
+        <p class="lead">Part one</p>
+        <p class="desc">How much do you enjoy these, just as you know them from school?</p>
+        <div id="subjSliders"></div>
+      </div>
+      <div class="qsection">
+        <p class="lead">Part two</p>
+        <p class="desc">How true does each of these feel about you?</p>
+        <div id="dispSliders"></div>
+      </div>
+      <div class="qfoot">
+        <button class="btn primary" id="seeResults">Show me some fields</button>
+        <button class="btn" id="resetQuiz">Reset sliders</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="view" id="results">
+    <div class="wrap">
+      <div class="rhead">
+        <h2>Fields to be curious about.</h2>
+        <p>These are starting points, not answers. Tap any one to see what it's made of and what a person in it actually
+          does.</p>
+      </div>
+      <div class="zone" id="zoneThin" style="display:none">
+        <div class="zone-lab">
+          <h3>Not much to go on yet</h3>
+        </div>
+        <p class="rw" id="thinMsg"></p>
+        <button class="btn" data-go="discover" style="margin-top:6px">Go back and move a few sliders</button>
+      </div>
+      <div class="zone" id="zoneWheel">
+        <div class="zone-lab">
+          <h3>In your wheelhouse</h3><span>close to what you told me you like</span>
+        </div>
+        <div id="wheelCards"></div>
+      </div>
+      <div class="zone" id="zoneStretch">
+        <div class="zone-lab">
+          <h3>One step outside</h3><span>held back by one thing you said, but worth a look</span>
+        </div>
+        <div id="stretchCards"></div>
+      </div>
+      <div class="zone" id="zoneFuture">
+        <div class="zone-lab">
+          <h3>Future-facing fields</h3><span id="futureSub"></span>
+        </div>
+        <p class="disc" id="futureIntro" style="margin:0 0 16px"></p>
+        <div id="futureCards"></div>
+      </div>
+      <p class="disc">This is a rough compass, built by hand, not a scientific test. It knows nothing about you beyond
+        the sliders you moved. The point is to widen the field of view, so treat a surprising result as an invitation to
+        go read about it, not as a judgement.</p>
+      <div class="rfoot">
+        <button class="btn primary" id="exportPromptBtn">Continue this with an AI</button>
+        <button class="btn" data-go="atlas">Open the full atlas</button>
+        <button class="btn" id="retake">Retake</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ATLAS -->
+  <section class="view" id="atlas">
+    <svg id="svg" viewBox="0 0 1000 720" preserveAspectRatio="xMidYMid meet" aria-label="Map of academic fields"><g id="viewport"></g></svg>
+    <div class="a-head">
+      <h2>The Atlas</h2>
+      <p>Subjects on the ring. Fields inside. Tap a subject to see everything it touches.</p>
+    </div>
+    <div class="legend" id="legend"></div>
+    <button class="reset" id="reset">Clear focus</button>
+    <div class="panel" id="panel">
+      <button class="close" id="close" aria-label="Close">×</button>
+      <div class="panel-in" id="panelIn"></div>
+    </div>
+  </section>
+</main>
+
+<div class="modal-backdrop" id="promptModal">
+  <div class="modal">
+    <button class="close" id="promptClose" aria-label="Close">×</button>
+    <div class="modal-head">
+      <h3>Take this further with an AI</h3>
+      <p>Copy this and paste it into ChatGPT, Claude, Gemini, or any AI assistant you already use. It carries what you
+        told Prism, so you won't have to explain it again, and it steers the AI away from making up video links it can't
+        actually verify.</p>
+    </div>
+    <div class="modal-body">
+      <textarea id="promptText" readonly spellcheck="false"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" id="copyPromptBtn">Copy prompt</button>
+      <span class="copy-msg" id="copyMsg">Copied</span>
+    </div>
+  </div>
+</div>
+
+<canvas id="transition-canvas"></canvas>
+<div id="custom-cursor"></div>
+
+<script src="prism.js"></script>

@@ -1,0 +1,10 @@
+[project]
+name = "prism-academic-atlas"
+version = "0.1.0"
+description = "Prism: The hidden spectrum of what you can study"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.139.0",
+    "uvicorn>=0.50.2",
+]

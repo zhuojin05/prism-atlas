@@ -1110,7 +1110,7 @@
     function buildExportPrompt(res, raw) {
       if (res.thin) {
         const futureLines = FUTURE_IDS.map(id => { const f = FIELDS.find(x => x.id === id); return `- **${f.name}**: ${f.what} (${f.future})`; }).join("\n");
-        return `I'm a high school student (around 15-17 years old) trying to figure out what to study at university. I used academic atlas tool called Prism, but I didn't have strong enough preferences yet for it to match me with specific careers. That is completely fine!
+        return `I'm a high school student (around 15-17 years old) trying to figure out what to study at university. I used an academic atlas tool called Prism, but I didn't have strong enough preferences yet for it to match me with specific careers. That is completely fine!
 
 Instead, the tool showed me a list of "Future-Facing Fields." These were selected using impact frameworks (like 80,000 Hours) because they address massive, neglected, and solvable global bottlenecks over the next few decades:
 
@@ -1157,11 +1157,12 @@ ${stretchBlock}
 Here is the raw data on my working style, daily reality preferences, and academic foundation:
 ${selfLines}
 
-Based on this profile, please give me a targeted breakdown by following these exactly 3 steps:
+Based on this profile, please give me a targeted breakdown by following exactly these 4 steps:
 
 1. **The Daily Reality:** Pick the 2 fields from my list that seem like the absolute best fit for my specific working style. For each one, describe the actual day-to-day reality of the job. What does an average Tuesday afternoon look like? (Keep it grounded, not overly romanticized).
 2. **The Pathway:** Tell me briefly what I should be focusing on right now in high school, and what a typical university pathway looks like for those 2 fields. 
-3. **The Rabbit Hole:** Suggest real, well-known YouTube channels or specific search terms I can look up to learn more (e.g., day-in-the-life vlogs, clear explainers, or documentary channels). If you can browse, find real creators. If you cannot browse, do NOT hallucinate or invent specific URL links—just give me the exact channel names or search queries.`;
+3. **The Rabbit Hole:** Suggest real, well-known YouTube channels or specific search terms I can look up to learn more (e.g., day-in-the-life vlogs, clear explainers, or documentary channels). Do NOT hallucinate or invent specific URL links—just give me the exact channel names or search queries.
+4. **The Interview (Crucial Step):** Do not just give me this information and end the chat. End your response by asking me 1 or 2 targeted, engaging questions to help me narrow down between these fields, or to uncover a specific niche within them. Ask about my tolerances for frustration, my ideal work environment, or specific problems I want to solve, so we can keep exploring together.`;
     }
 
     let lastRes = null, lastRaw = null;

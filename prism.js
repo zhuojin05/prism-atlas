@@ -36,13 +36,6 @@
         future: "Batteries, solar cells, and lower-carbon construction are all bottlenecked on better materials, a slower and less visible problem than the technologies built on top of it."
       },
       {
-        id: "biochem", name: "Biochemistry", par: ["chem", "bio"], disp: { small: .7, hands: .5 },
-        what: "Chemistry, except the reactions are happening inside living things.",
-        obsessed: "The molecular machines that keep a cell alive, and what happens when one breaks.",
-        tuesday: "Purifying a single protein out of a cell and watching what it does in a tube.",
-        hook: "Your body runs thousands of chemical reactions every second. Most drugs work by jamming exactly one of them."
-      },
-      {
         id: "compchem", name: "Computational & Theoretical Chemistry", par: ["math", "chem"], disp: { theory: .8, small: .6 },
         what: "Predicting how molecules behave and react using physics and mathematics, before or instead of testing them in a lab.",
         obsessed: "What's actually happening to electrons and atoms during a reaction, at a speed and scale too fast and too small to watch directly.",
@@ -83,13 +76,6 @@
         obsessed: "How much a bridge, tower, or tunnel can take before it fails.",
         tuesday: "Calculating whether a beam will hold, then checking what an earthquake would do to it.",
         hook: "Every structure is designed to bend a little. A skyscraper that couldn't sway in the wind would crack."
-      },
-      {
-        id: "bioinfo", name: "Bioinformatics", par: ["bio", "cs"], disp: { small: .6, theory: .5 },
-        what: "Reading biology as data, at a scale no human could manage by hand.",
-        obsessed: "Finding the one meaningful pattern inside billions of letters of DNA.",
-        tuesday: "Writing code to compare thousands of genomes and spot the mutation behind a disease.",
-        hook: "Your genome is about 3 billion letters. Printed out, it would fill a stack of books taller than a house."
       },
       {
         id: "ml", name: "Machine Learning & AI", par: ["cs", "math"], disp: { theory: .6, build: .4 },
@@ -158,12 +144,12 @@
         future: "Governments, cities, and companies will keep needing people who can actually model and predict a changing climate, not just discuss it."
       },
       {
-        id: "synbio", name: "Synthetic Biology", par: ["bio", "chem", "cs"], disp: { build: .7, small: .6, hands: .4 },
-        what: "Treating living cells like machines you can reprogram.",
-        obsessed: "Rewriting DNA to make cells do useful new things.",
-        tuesday: "Designing a stretch of genetic code, then checking whether the bacteria actually build what you wanted.",
-        hook: "Some of the insulin diabetics depend on is made by bacteria reprogrammed to produce a human protein.",
-        future: "Reprogramming living cells is becoming a real engineering discipline, spanning medicine, food, and materials, and it needs people who understand the biology and the risks together."
+        id: "biosecurity", name: "Synthetic Biology & Biosecurity", par: ["bio", "chem", "cs"], disp: { build: .7, small: .6, hands: .4 },
+        what: "Treating living cells like machines you can reprogram, while building defenses against engineered pathogens.",
+        obsessed: "Rewriting DNA to make cells do useful new things, and predicting what happens if those codes leak or mutate.",
+        tuesday: "Designing a stretch of genetic code to produce a novel material, or modeling how quickly a newly sequenced pathogen could spread.",
+        hook: "The same technology used to reprogram bacteria to produce life-saving insulin could theoretically be used to engineer a pandemic.",
+        future: "As biotechnology gets cheaper and more accessible, humanity desperately needs people who can engineer solutions while simultaneously building a robust global immune system against biorisks."
       },
       {
         id: "cheminfo", name: "Cheminformatics & Computational Drug Discovery", par: ["chem", "cs"], disp: { theory: .5, small: .6 },
@@ -194,27 +180,6 @@
         hook: "The layout of a hospital corridor can measurably change how quickly patients recover."
       },
       {
-        id: "archaeo", name: "Archaeology", par: ["historyculture", "chem", "earth"], disp: { hands: .6, people: .4 },
-        what: "Reconstructing the human past from what it left behind.",
-        obsessed: "How people lived thousands of years before anyone wrote it down.",
-        tuesday: "Dating a fragment of bone by its chemistry, or mapping a buried site with ground radar.",
-        hook: "Modern archaeology reads ancient diets from tooth chemistry, and finds lost cities from scans taken by aircraft."
-      },
-      {
-        id: "artcons", name: "Art Conservation & Heritage Science", par: ["chem", "art"], disp: { hands: .7, small: .3 },
-        what: "Using chemistry and careful physical work to analyse, preserve, and restore paintings, sculptures, and historical objects.",
-        obsessed: "What a damaged or ageing object is actually made of, and how to stop it decaying further without erasing its history.",
-        tuesday: "Testing a tiny paint sample under different light and chemical analysis to work out what pigments an artist actually used centuries ago.",
-        hook: "X-ray and infrared scans have revealed entire hidden paintings underneath famous ones, drafts the artist painted over and never meant anyone to see."
-      },
-      {
-        id: "forensic", name: "Forensic Science", par: ["chem", "bio"], disp: { hands: .7, people: .5, small: .3 },
-        what: "Using science to reconstruct what happened at a crime scene.",
-        obsessed: "What physical traces can, and importantly can't, prove.",
-        tuesday: "Matching a DNA sample, or working out how a stain ended up where it is.",
-        hook: "The real work looks nothing like the TV version. A single reliable result can take days, not a dramatic minute."
-      },
-      {
         id: "quantum", name: "Quantum Computing", par: ["phys", "cs", "math"], disp: { theory: .9, small: .6 },
         what: "Building computers that run on the strange rules of the very small.",
         obsessed: "Using quantum weirdness to solve problems ordinary computers never could.",
@@ -236,13 +201,6 @@
         tuesday: "Testing whether an artificial joint or a new sensor holds up to real use.",
         hook: "Some prosthetic limbs now wire into nerves, so the person can move them just by thinking.",
         future: "Populations are ageing across most of the world, and the need for better medical devices, diagnostics, and care technology is only going up."
-      },
-      {
-        id: "softmatter", name: "Soft Matter Physics", par: ["phys", "chem"], disp: { small: .7, theory: .6, hands: .4 },
-        what: "The physics of squishy, in-between things.",
-        obsessed: "Gels, foams, liquid crystals, and the goo inside your cells.",
-        tuesday: "Watching how a droplet forms, flows, or falls apart under a microscope.",
-        hook: "Your phone screen, mayonnaise, and the inside of a cell are all 'soft matter', governed by the same physics."
       },
       {
         id: "sysbio", name: "Systems Biology", par: ["bio", "math", "cs"], disp: { theory: .7, small: .5 },
@@ -316,11 +274,12 @@
         hook: "Some of the clearest evidence for how fast misinformation spreads came from watching ideas move through social networks the same way real epidemics move through a population."
       },
       {
-        id: "techethics", name: "Technology Ethics & Policy", par: ["cs", "econpol"], disp: { theory: .5, people: .4 },
-        what: "Working out how to govern something that changes faster than the laws meant to regulate it.",
-        obsessed: "Who is accountable when an algorithm makes a decision that harms someone, and how you'd even prove it.",
-        tuesday: "Reading a proposed AI regulation and stress-testing it against a real, messy case it would actually have to handle.",
-        hook: "Several countries have written laws about self-driving cars and facial recognition before those technologies were fully built, betting on what the technology would become."
+        id: "aialignment", name: "AI Alignment & Governance", par: ["cs", "econpol", "psych"], disp: { theory: .8, people: .6, large: .7 },
+        what: "The technical and political challenge of ensuring highly advanced AI systems actually do what humanity wants them to do.",
+        obsessed: "How to mathematically guarantee that a system smarter than its creator won't find dangerous loopholes to achieve its goals.",
+        tuesday: "Designing an evaluation to intentionally trick a language model into dangerous behavior to find its failure points, or drafting treaties for international compute sharing.",
+        hook: "Nobody actually knows how to reliably control a superintelligent system yet. It is arguably the most urgent unsolved technical problem in the world.",
+        future: "There is a massive global shortage of people who possess both the deep technical understanding of machine learning and the policy acumen to govern it globally."
       },
       {
         id: "bioanthro", name: "Biological & Evolutionary Anthropology", par: ["bio", "historyculture"], disp: { hands: .5, theory: .4 },
@@ -391,6 +350,22 @@
         obsessed: "The gap between how a designer assumes people will use something and how people actually use it.",
         tuesday: "Watching real people try to complete a task on a new interface, then working out exactly where and why they got stuck.",
         hook: "Most people can't tell you why an app feels frustrating to use. Good UX research finds the actual reason, often something as small as one button in the wrong place."
+      },
+      {
+        id: "compstructbio", name: "Computational Structural Biology", par: ["bio", "cs", "phys"], disp: { theory: .8, small: .9, build: .4 },
+        what: "Mapping the ensemble properties and physical dynamics of complex biological molecules using machine learning.",
+        obsessed: "Intrinsically disordered proteins, and how their constantly shifting shapes dictate human health.",
+        tuesday: "Running machine learning predictions against experimental physical data, like NMR, to evaluate structural hallucinations and see how a protein actually folds.",
+        hook: "The extreme difficulty of treating many neurodegenerative diseases is a consequence of these complex, disordered proteins—understanding their physics is the motivation for the entire field.",
+        future: "AI has fundamentally changed how we predict biology, but the bottleneck is a lack of people who understand both the computational models and the underlying biological physics."
+      },
+      {
+        id: "hwsec", name: "Hardware & Infrastructure Security", par: ["cs", "phys"], disp: { hands: .8, build: .7, small: .4 },
+        what: "Finding vulnerabilities in the physical and embedded layer of our digital world, from access controls to power grids.",
+        obsessed: "How systems that look completely secure on paper can be bypassed in the real world using physical tools and radio frequencies.",
+        tuesday: "Scanning physical campus card readers to extract MIFARE Classic keys, or analyzing frequencies to emulate RFID and NFC credentials.",
+        hook: "Most cybersecurity focuses on software firewalls. But if someone can physically emulate a key to walk through a door or intercept a hardware signal, the software doesn't matter.",
+        future: "As the world automates its physical infrastructure, the most neglected security threats involve the physical hardware layer, requiring engineers who think like attackers."
       }
     ];
 
@@ -411,7 +386,7 @@
 
     // fields worth surfacing regardless of personal fit, because of where the world seems to be heading.
     // deliberately a small, mixed-domain subset, not a ranking of every field's "importance".
-    const FUTURE_IDS = ["ml", "climate", "synbio", "materials", "epi", "biomed", "datasci", "envsci"];
+    const FUTURE_IDS = ["aialignment", "compstructbio", "climate", "biosecurity", "materials", "hwsec", "epi"];
 
     /* ============ small utils ============ */
     const rgb = a => `rgb(${a[0]},${a[1]},${a[2]})`;

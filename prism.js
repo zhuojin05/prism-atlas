@@ -371,17 +371,38 @@
 
     // quiz statements -> dim weights (positive or negative)
     const STATEMENTS = [
-      { t: "I like taking things apart to see how they work.", w: { build: .7, hands: .6 } },
-      { t: "I'd rather invent something new than study something that already exists.", w: { build: .8, theory: -.3 } },
-      { t: "Living things fascinate me, how bodies, cells, or ecosystems work.", w: { bio: .9, small: .2 } },
-      { t: "I like working with my hands, in a lab or a workshop.", w: { hands: .9, build: .3 } },
-      { t: "I want my work to help people in a direct, visible way.", w: { people: .9, psych: .15, econpol: .15 } },
-      { t: "I love reading, writing, arguments, and questions about society.", w: { econpol: .45, historyculture: .45, theory: .3, art: .2 } },
-      { t: "I'm drawn to the very big, space, oceans, climate, whole populations.", w: { large: .9 } },
-      { t: "I'm drawn to the very small, atoms, molecules, cells, lines of code.", w: { small: .9 } },
-      { t: "I like computers and the idea of programming.", w: { cs: .9, theory: .2 } },
-      { t: "I care how things look and feel, not just whether they work.", w: { art: .9, build: .2 } },
-      { t: "I'm comfortable leaning on a lot of maths.", w: { math: .9, theory: .4 } }
+      // 1. The Systems vs. Rules split (Separating messy bio/earth from strict math/cs)
+      { t: "I am drawn to systems that are messy, living, and unpredictable over things that follow strict mathematical rules.", w: { bio: .8, earth: .5, psych: .4, math: -.4 } },
+
+      // 2. The Abstraction vs. Application split (Theory vs Build)
+      { t: "I care more about understanding the deepest fundamental truths of the universe than inventing a physical product.", w: { theory: .9, phys: .6, build: -.6, hands: -.4 } },
+
+      // 3. The Computation & Automation split (CS / Data)
+      { t: "I like the idea of writing rules, algorithms, or code to find hidden patterns or automate a process so I don't have to do it by hand.", w: { cs: .9, math: .5, theory: .4 } },
+
+      // 4. The Wet-Lab / Chemistry split (Separating computational approaches from hands-on lab work)
+      { t: "I enjoy the idea of carefully mixing, purifying, or testing physical substances in a lab setting to see exactly how they react.", w: { chem: .9, hands: .8, bio: .4 } },
+
+      // 5. The Scale of Impact split (80k hours inspired: Large vs Local)
+      { t: "I want to work on solving massive global bottlenecks (like climate or disease), even if I never directly meet the people I help.", w: { large: .9, earth: .6, people: .4 } },
+
+      // 6. The Micro vs Macro split
+      { t: "I am fascinated by how microscopic things—like a single cell, a molecule, or a microchip—can completely control the world.", w: { small: .9, bio: .5, chem: .5, phys: .3 } },
+
+      // 7. The Direct Empathy split (Psych / Social)
+      { t: "I am highly motivated by directly understanding, interacting with, and improving the daily lives of individuals.", w: { people: .9, psych: .8, econpol: .3 } },
+
+      // 8. The Humanities & Systems of Power split
+      { t: "I love analyzing how power, culture, language, and human behavior shape history, rather than focusing purely on science.", w: { historyculture: .9, econpol: .8, psych: .5, theory: .3 } },
+
+      // 9. The Engineering & Tinkering split
+      { t: "I want to physically make things—prototypes, circuits, or structures—where I can touch the result and see it work.", w: { build: .9, hands: .8, art: .3, theory: -.3 } },
+
+      // 10. The Aesthetics & Design split
+      { t: "When I look at a product, system, or building, I constantly think about how its design could be more beautiful or intuitive for the user.", w: { art: .9, psych: .5, build: .4 } },
+
+      // 11. The Pure Logic split
+      { t: "I enjoy getting lost in complex puzzles and pure logic, even if they don't have an immediate real-world use.", w: { math: .9, theory: .7 } }
     ];
 
     // fields worth surfacing regardless of personal fit, because of where the world seems to be heading.
@@ -1088,57 +1109,59 @@
     }
     function buildExportPrompt(res, raw) {
       if (res.thin) {
-        const futureLines = FUTURE_IDS.map(id => { const f = FIELDS.find(x => x.id === id); return `- ${f.name}: ${f.what} (${f.future})`; }).join("\n");
-        return `I'm a high school student, around 15 to 17 years old, trying to get a sense of what I might want to study at university. I used a tool called Prism, which maps ordinary school subjects onto more specialised, interdisciplinary fields, and answered a short slider questionnaire about what I enjoy and how I like to think. I left most of the sliders near the middle, so the tool didn't have enough signal to give me a personalised match, and it was honest about that instead of guessing.
+        const futureLines = FUTURE_IDS.map(id => { const f = FIELDS.find(x => x.id === id); return `- **${f.name}**: ${f.what} (${f.future})`; }).join("\n");
+        return `I'm a high school student (around 15-17 years old) trying to figure out what to study at university. I used academic atlas tool called Prism, but I didn't have strong enough preferences yet for it to match me with specific careers. That is completely fine!
 
-Instead, it showed me some "future-facing" fields, areas that seem likely to matter more over the next couple of decades regardless of my personal taste, not a ranking of which is most important, just things worth knowing exist:
+Instead, the tool showed me a list of "Future-Facing Fields." These were selected using impact frameworks (like 80,000 Hours) because they address massive, neglected, and solvable global bottlenecks over the next few decades:
+
 ${futureLines}
 
-I'd like your help. Please act as a warm, knowledgeable guide, not someone pushing me toward a decision. I don't need to choose anything yet, I'm just exploring, and I don't actually know my own preferences that well yet.
+I'd like your help. Please act as a warm, highly knowledgeable career guide. I don't need to choose anything yet, I'm just exploring.
 
-Here's what would help:
+Here is how we will do this:
+1. **The Interview:** Ask me 2 or 3 engaging, unconventional questions about how I like to spend my time, how I solve problems, or what kind of environments I thrive in. The goal is to help me discover my "Ikigai" (the intersection of what I love, what I'm good at, and what the world needs).
+2. **The Connection:** Once I answer, connect my working style to 1 or 2 of the fields from the list above (or a different high-impact field you think fits better). 
+3. **The Rabbit Hole:** Suggest real, well-known YouTube channels or specific search terms I can look up to see a "day in the life" of someone working in that field. (Do NOT hallucinate or invent specific URL links—just give me the exact channel names or search queries).
 
-1. Ask me a few open questions to get a sense of what I actually enjoy, since I haven't figured that out myself. Things like what I like doing in my free time, which school subjects don't feel like a chore, or what kind of problems I find myself curious about. Then connect what I tell you back to fields from the list above, or others you think fit better.
-
-2. Once we've narrowed things down a bit, point me toward specific, real YouTube videos or channels that explore 2 or 3 relevant fields in an engaging, understandable way. I like things like a day in the life of a working scientist or engineer, clear explainer videos, or talks aimed at a general audience, rather than dry recorded lectures. If you're able to search or browse, please look these up and give me real, specific titles or links. If you can't browse, please don't invent specific video titles or links, since a made-up recommendation is worse than none here. Instead, name real, well-known channels or creators who cover this kind of content, and give me good search terms I can try on YouTube myself, and tell me that's what you're doing.
-
-3. Keep the tone encouraging and low-pressure. This came from a self-guided tool I used for fun, not a formal assessment, so hold all of it loosely.`;
+Please start by asking me the questions!`;
       }
-      const wheelLines = res.wheel.map(x => `- ${x.f.name}: ${x.f.what}`).join("\n");
-      const stretchLines = res.stretch.map(x => `- ${x.f.name}: ${x.f.what} (${stretchWhyText(x, res)})`).join("\n");
+
+      const wheelLines = res.wheel.map(x => `- **${x.f.name}**: ${x.f.what}`).join("\n");
+      const stretchLines = res.stretch.map(x => `- **${x.f.name}**: ${x.f.what} (*Why this?* ${stretchWhyText(x, res)})`).join("\n");
       const stretchBlock = res.stretch.length
-        ? `\nFIELDS ONE STEP OUTSIDE MY WHEELHOUSE (a bit further out, but the kind of thing people like me are often pleasantly surprised by):\n${stretchLines}\n`
+        ? `\nFIELDS JUST OUTSIDE MY WHEELHOUSE (Fields I might be pleasantly surprised by):\n${stretchLines}\n`
         : "";
 
       const lovedSubj = PORDER.filter(p => raw.subj[p] >= 70).map(p => PRIMS[p].name);
       const dislikedSubj = PORDER.filter(p => raw.subj[p] <= 30).map(p => PRIMS[p].name);
-      const trueStmts = STATEMENTS.filter((s, i) => raw.disp[i] >= 70).map(s => s.t);
-      const falseStmts = STATEMENTS.filter((s, i) => raw.disp[i] <= 30).map(s => s.t);
+      const trueStmts = STATEMENTS.filter((s, i) => raw.disp[i] >= 70).map(s => `"${s.t}"`);
+      const falseStmts = STATEMENTS.filter((s, i) => raw.disp[i] <= 30).map(s => `"${s.t}"`);
+      
       let selfLines = "";
-      if (lovedSubj.length) selfLines += `Subjects I enjoy: ${lovedSubj.join(", ")}\n`;
-      if (dislikedSubj.length) selfLines += `Subjects I'm not drawn to: ${dislikedSubj.join(", ")}\n`;
-      if (trueStmts.length) selfLines += `Feels true for me: ${trueStmts.join(" / ")}\n`;
-      if (falseStmts.length) selfLines += `Doesn't feel like me: ${falseStmts.join(" / ")}\n`;
-      if (!selfLines) selfLines = "I kept most sliders near the middle, so I don't have strong stated likes or dislikes yet.\n";
+      if (lovedSubj.length) selfLines += `**Subjects I naturally enjoy:** ${lovedSubj.join(", ")}\n`;
+      if (dislikedSubj.length) selfLines += `**Subjects I am not drawn to:** ${dislikedSubj.join(", ")}\n\n`;
+      
+      if (trueStmts.length) selfLines += `**My Working Style & Impact Preferences (Statements I strongly agreed with):**\n- ${trueStmts.join("\n- ")}\n\n`;
+      if (falseStmts.length) selfLines += `**What I want to avoid (Statements I strongly disagreed with):**\n- ${falseStmts.join("\n- ")}\n`;
+      
+      if (!selfLines) selfLines = "I kept most sliders near the middle, so I don't have extremely strong stated likes or dislikes yet.\n";
 
-      return `I'm a high school student, around 15 to 17 years old, trying to get a sense of what I might want to study at university. I used a tool called Prism, which maps ordinary school subjects onto more specialised, interdisciplinary fields, and I answered a short slider questionnaire about what I enjoy and how I like to think.
+      return `I'm a high school student (around 15-17 years old) exploring university majors and careers. I used a tool called Prism, which maps traditional school subjects to modern, high-impact interdisciplinary fields. 
 
-I'd like your help exploring what it found. Please act as a warm, knowledgeable guide, not someone pushing me toward a decision. I don't need to choose anything yet, I'm just exploring.
+Please act as a warm, highly knowledgeable career guide. I don't need to choose a career today; I just want to understand my options.
 
-FIELDS IN MY WHEELHOUSE (closely match what I said):
+Here is what the tool suggested based on my unique blend of interests:
+FIELDS IN MY WHEELHOUSE:
 ${wheelLines}
 ${stretchBlock}
-A BIT ABOUT ME, FROM THE QUESTIONNAIRE:
+Here is the raw data on my working style, daily reality preferences, and academic foundation:
 ${selfLines}
-Here's what would help:
 
-1. Pick 2 or 3 of the fields above that seem most worth a closer look, or ask me which ones I want to dig into first, then give me a short, honest sense of what studying and working in it is actually like, beyond the one-line summary above.
+Based on this profile, please give me a targeted breakdown by following these exactly 3 steps:
 
-2. Point me toward specific, real YouTube videos or channels that explore these fields in an engaging, understandable way. I like things like a day in the life of a working scientist or engineer, clear explainer videos, or talks aimed at a general audience, rather than dry recorded lectures. If you're able to search or browse, please look these up and give me real, specific titles or links. If you can't browse, please don't invent specific video titles or links, since a made-up recommendation is worse than none here. Instead, name real, well-known channels or creators who cover this kind of content, and give me good search terms I can try on YouTube myself, and tell me that's what you're doing.
-
-3. Feel free to ask me questions to narrow things down rather than covering everything at once, for example which fields sound most interesting just from the name and the one-line description.
-
-4. Keep the tone encouraging and low-pressure. This came from a self-guided tool I used for fun, not a formal assessment, so hold it loosely.`;
+1. **The Daily Reality:** Pick the 2 fields from my list that seem like the absolute best fit for my specific working style. For each one, describe the actual day-to-day reality of the job. What does an average Tuesday afternoon look like? (Keep it grounded, not overly romanticized).
+2. **The Pathway:** Tell me briefly what I should be focusing on right now in high school, and what a typical university pathway looks like for those 2 fields. 
+3. **The Rabbit Hole:** Suggest real, well-known YouTube channels or specific search terms I can look up to learn more (e.g., day-in-the-life vlogs, clear explainers, or documentary channels). If you can browse, find real creators. If you cannot browse, do NOT hallucinate or invent specific URL links—just give me the exact channel names or search queries.`;
     }
 
     let lastRes = null, lastRaw = null;

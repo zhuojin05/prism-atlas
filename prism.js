@@ -415,6 +415,7 @@
 
     function runTransitionAnimation() {
       isTransitioning = true;
+      document.body.style.overflow = "hidden";
 
       // Play beautiful organ transition sound
       Sound.playOrganTransition();
@@ -673,7 +674,6 @@
 
           // Update nav links activation state
           document.querySelectorAll(".navlinks button").forEach(b => b.classList.toggle("active", b.dataset.go === "discover"));
-          document.body.style.overflow = "auto";
           window.scrollTo(0, 0);
         }
 
@@ -683,6 +683,7 @@
           cancelAnimationFrame(animId);
           window.removeEventListener("resize", resizeCanvas);
           canvas.style.display = "none";
+          document.body.style.overflow = "auto";
           isTransitioning = false;
         }
       }

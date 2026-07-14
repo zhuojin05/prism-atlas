@@ -32,6 +32,10 @@
     background: rgba(255, 255, 255, 0.3);
   }
 
+  html {
+    background-color: var(--ink);
+  }
+
   html,
   body {
     margin: 0;
@@ -210,6 +214,7 @@
     transition: transform .15s, background .15s, border-color .15s;
     color: var(--text);
     background: rgba(255, 255, 255, 0.05);
+    overflow: hidden;
   }
 
   .btn:hover {
@@ -219,6 +224,8 @@
 
   .btn.primary {
     background: linear-gradient(120deg, #8b5cf6, #3b82f6 60%, #22d3ee);
+    background-repeat: no-repeat;
+    background-clip: padding-box;
     border-color: transparent;
     color: #0a0f1c
   }

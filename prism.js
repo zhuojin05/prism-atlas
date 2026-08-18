@@ -1,5 +1,562 @@
 (function () {
     "use strict";
+
+    /* ============ I18N & LANGUAGE SUPPORT ============ */
+    let currentLang = (function() {
+      try {
+        const saved = localStorage.getItem("prism_lang");
+        if (saved === "sk" || saved === "en") return saved;
+      } catch (e) {}
+      return "en";
+    })();
+
+    const I18N_STATIC = {
+      en: {
+        nav_discover: "Discover",
+        nav_atlas: "Atlas",
+        home_hero_title: "School shows you ten subjects. It hides a <em>thousand fields</em>.",
+        home_hero_sub: "A prism splits plain white light into a whole spectrum. Prism does the same to the subjects you already take, and turns them into a map of what you could actually study.",
+        home_cta_discover: "Find fields for me",
+        home_cta_atlas: "Explore the atlas",
+        home_note: "Nothing here is a test or a verdict. It's a set of doorways to be curious about. You can change your mind as many times as you like.",
+        home_card1_title: "Answer a few sliders",
+        home_card1_desc: "Say what you enjoy and how you like to think. Middle means no strong feeling. Two minutes, no wrong answers.",
+        home_card2_title: "Get two kinds of fields",
+        home_card2_desc: "The ones squarely in your wheelhouse, and the ones just outside it that tend to surprise people like you.",
+        home_card3_title: "See them on the map",
+        home_card3_desc: "Every field is built from school subjects, and coloured by the mix. Follow the lines to see where anything comes from.",
+        disc_title: "A few questions.",
+        disc_desc: 'Move each slider. The middle means "no strong feeling either way", and it counts for nothing, so only move the ones you have an opinion on. There are no right answers.',
+        disc_part1_lead: "Part one",
+        disc_part1_desc: "How much do you enjoy these, just as you know them from school?",
+        disc_part2_lead: "Part two",
+        disc_part2_desc: "How true does each of these feel about you?",
+        disc_btn_results: "Show me some fields",
+        disc_btn_reset: "Reset sliders",
+        res_title: "Fields to be curious about.",
+        res_desc: "These are starting points, not answers. Tap any one to see what it's made of and what a person in it actually does.",
+        res_thin_title: "Not much to go on yet",
+        res_thin_btn: "Go back and move a few sliders",
+        res_wheel_title: "In your wheelhouse",
+        res_wheel_sub: "close to what you told me you like",
+        res_stretch_title: "One step outside",
+        res_stretch_sub: "held back by one thing you said, but worth a look",
+        res_future_title: "Future-facing fields",
+        res_disclaimer: "This is a rough compass, built by hand, not a scientific test. It knows nothing about you beyond the sliders you moved. The point is to widen the field of view, so treat a surprising result as an invitation to go read about it, not as a judgement.",
+        res_btn_ai: "Continue this with an AI",
+        res_btn_atlas: "Open the full atlas",
+        res_btn_retake: "Retake",
+        atlas_title: "The Atlas",
+        atlas_desc: "Subjects on the ring. Fields inside. Tap a subject to see everything it touches.",
+        atlas_reset: "Clear focus",
+        modal_title: "Take this further with an AI",
+        modal_desc: "Copy this and paste it into ChatGPT, Claude, Gemini, or any AI assistant you already use. It carries what you told Prism, so you won't have to explain it again, and it steers the AI away from making up video links it can't actually verify.",
+        modal_copy: "Copy prompt",
+        sound_on: "Sound on",
+        sound_off: "Sound off"
+      },
+      sk: {
+        nav_discover: "Objavuj",
+        nav_atlas: "Atlas",
+        home_hero_title: "Škola vám ukáže desať predmetov. Skrýva však <em>tisíc odborov</em>.",
+        home_hero_sub: "Hranol rozkladá biele svetlo na celé spektrum. Prism robí to isté s predmetmi, ktoré už študujete, a premieňa ich na mapu toho, čo by ste mohli naozaj študovať.",
+        home_cta_discover: "Nájsť odbory pre mňa",
+        home_cta_atlas: "Preskúmať atlas",
+        home_note: "Nič tu nie je test ani verdikt. Je to súbor dverí na podnietenie zvedavosti. Svoj názor môžete zmeniť koľkokrát chcete.",
+        home_card1_title: "Odpovedzte na pár posuvníkov",
+        home_card1_desc: "Povedzte, čo vás baví a ako radi premýšľate. Stred znamená bez vyhraneného názoru. Dve minúty, žiadne zlé odpovede.",
+        home_card2_title: "Získajte dva druhy odborov",
+        home_card2_desc: "Tie, ktoré presne sedia k vašim záujmom, a tie tesne vedľa, ktoré ľuďom ako vy zvyknú vyraziť dych.",
+        home_card3_title: "Pozrite si ich na mape",
+        home_card3_desc: "Každý odbor je postavený zo školských predmetov a sfarbený ich kombináciou. Sledujte čiary a zistite, odkiaľ čo pochádza.",
+        disc_title: "Pár otázok.",
+        disc_desc: "Posuňte každý posuvník. Stred znamená „nemám vyhranený názor“ a nepočíta sa, takže posúvajte len tie, na ktoré máte názor. Žiadne odpovede nie sú nesprávne.",
+        disc_part1_lead: "Prvá časť",
+        disc_part1_desc: "Ako veľmi vás baví toto, tak ako to poznáte zo školy?",
+        disc_part2_lead: "Druhá časť",
+        disc_part2_desc: "Ako veľmi to vystihuje práve vás?",
+        disc_btn_results: "Ukáž mi odbory",
+        disc_btn_reset: "Reštartovať posuvníky",
+        res_title: "Odbory, ktoré stoja za zvedavosť.",
+        res_desc: "Toto sú odrazové mostíky, nie konečné odpovede. Ťuknite na ktorýkoľvek a zistite, z čoho pozostáva a čo človek v ňom naozaj robí.",
+        res_thin_title: "Zatiaľ málo informácií",
+        res_thin_btn: "Vráťte sa a posuňte niekoľko posuvníkov",
+        res_wheel_title: "Vaša parketa",
+        res_wheel_sub: "blízko toho, čo ste označili ako obľúbené",
+        res_stretch_title: "Krok vedľa",
+        res_stretch_sub: "brzdené jednou vašou odpoveďou, ale stojí za pozretie",
+        res_future_title: "Odbory budúcnosti",
+        res_disclaimer: "Toto je orientačný kompas vytvorený ručne, nie vedecký test. Nevie o vás nič okrem posuvníkov, ktoré ste posunuli. Cieľom je rozšíriť si obzory, preto berte prekvapivý výsledok ako pozvánku na čítanie, nie ako rozsudok.",
+        res_btn_ai: "Pokračovať s AI",
+        res_btn_atlas: "Otvoriť celý atlas",
+        res_btn_retake: "Skúsiť znova",
+        atlas_title: "Atlas",
+        atlas_desc: "Predmety na obvode. Odbory vo vnútri. Ťuknite na predmet a uvidíte všetko, čoho sa dotýka.",
+        atlas_reset: "Vymazať výber",
+        modal_title: "Rozviňte to ďalej s AI",
+        modal_desc: "Skopírujte toto a vložte to do ChatGPT, Claude, Gemini alebo akéhokoľvek AI asistenta, ktorého používate. Obsahuje vaše odpovede z Prismu, takže mu to nemusíte vysvetľovať znova, a navedie AI bez toho, aby si vymýšľala nefunkčné odkazy.",
+        modal_copy: "Kopírovať výzvu",
+        sound_on: "Zvuk zapnutý",
+        sound_off: "Zvuk vypnutý"
+      }
+    };
+
+    const PRIMS_I18N = {
+      en: {
+        math: { name: "Mathematics", blurb: "The language everything else is written in. Pattern, structure, and proof." },
+        phys: { name: "Physics", blurb: "The rules the universe runs on, from atoms to galaxies." },
+        chem: { name: "Chemistry", blurb: "What everything is made of, and how it rearranges." },
+        bio: { name: "Biology", blurb: "How living things work, from single molecules to whole ecosystems." },
+        earth: { name: "Earth Science", blurb: "The planet itself. Rocks, oceans, atmosphere, and deep time." },
+        cs: { name: "Computer Science", blurb: "How to compute, store, and reason with information." },
+        psych: { name: "Psychology", blurb: "How individuals think, feel, perceive, and behave." },
+        historyculture: { name: "History & Culture", blurb: "The human past, and how cultures and societies actually lived and left their mark." },
+        econpol: { name: "Economics & Politics", blurb: "How markets, institutions, and governments make decisions, and who that affects." },
+        art: { name: "Art & Design", blurb: "Making things that communicate, move people, or get used." }
+      },
+      sk: {
+        math: { name: "Matematika", blurb: "Jazyk, v ktorom je napísané všetko ostatné. Vzory, štruktúra a dôkazy." },
+        phys: { name: "Fyzika", blurb: "Pravidlá, ktorými sa riadi vesmír, od atómov až po galaxie." },
+        chem: { name: "Chémia", blurb: "Z čoho pozostáva všetko okolo nás a ako sa to premieňa." },
+        bio: { name: "Biológia", blurb: "Ako fungujú živé organizmy, od jedinej molekuly po celé ekosystémy." },
+        earth: { name: "Vedy o Zemi", blurb: "Planéta samotná. Horniny, oceány, atmosféra a hlboký čas." },
+        cs: { name: "Počítačové vedy", blurb: "Ako spracovávať, uchovávať a logicky vyhodnocovať informácie." },
+        psych: { name: "Psychológia", blurb: "Ako jednotlivci myslia, cítia, vnímajú a konajú." },
+        historyculture: { name: "História a kultúra", blurb: "Ľudská minulosť a to, ako kultúry a spoločnosti žili a zanechali svoju stopu." },
+        econpol: { name: "Ekonómia a politika", blurb: "Ako trhy, inštitúcie a vlády robia rozhodnutia a koho tým ovplyvňujú." },
+        art: { name: "Umenie a dizajn", blurb: "Tvorba vecí, ktoré komunikujú, hýbu ľuďmi alebo nachádzajú využitie." }
+      }
+    };
+
+    const DIMLABEL_I18N = {
+      en: {
+        math: "maths", phys: "physics", chem: "chemistry", bio: "biology", earth: "the planet",
+        cs: "computing", psych: "psychology", historyculture: "history and culture", econpol: "economics and politics", art: "art & design", build: "making things", theory: "understanding why",
+        small: "the very small", large: "the very big", people: "helping people", hands: "hands-on work"
+      },
+      sk: {
+        math: "matematiku", phys: "fyziku", chem: "chémiu", bio: "biológiu", earth: "našu planétu",
+        cs: "informatiku", psych: "psychológiu", historyculture: "históriu a kultúru", econpol: "ekonómiu a politiku", art: "umenie a dizajn", build: "tvorbu vecí", theory: "chápanie podstaty",
+        small: "mikrosvet", large: "makrosvet", people: "pomoc ľuďom", hands: "praktickú prácu"
+      }
+    };
+
+    const STATEMENTS_I18N = {
+      en: [
+        "I am drawn to systems that are messy, living, and unpredictable over things that follow strict mathematical rules.",
+        "I care more about understanding the deepest fundamental truths of the universe than inventing a physical product.",
+        "I like the idea of writing rules, algorithms, or code to find hidden patterns or automate a process so I don't have to do it by hand.",
+        "I enjoy the idea of carefully mixing, purifying, or testing physical substances in a lab setting to see exactly how they react.",
+        "I want to work on solving massive global bottlenecks (like climate or disease), even if I never directly meet the people I help.",
+        "I am fascinated by how microscopic things—like a single cell, a molecule, or a microchip—can completely control the world.",
+        "I am highly motivated by directly understanding, interacting with, and improving the daily lives of individuals.",
+        "I love analyzing how power, culture, language, and human behavior shape history, rather than focusing purely on science.",
+        "I want to physically make things—prototypes, circuits, or structures—where I can touch the result and see it work.",
+        "When I look at a product, system, or building, I constantly think about how its design could be more beautiful or intuitive for the user.",
+        "I enjoy getting lost in complex puzzles and pure logic, even if they don't have an immediate real-world use."
+      ],
+      sk: [
+        "Lákajú ma skôr živé, nepredvídateľné a komplexné systémy než veci riadiace sa prísnymi matematickými pravidlami.",
+        "Viac mi záleží na pochopení najhlbších základných právd vesmíru než na vynájdení fyzického produktu.",
+        "Páči sa mi myšlienka písania pravidiel, algoritmov alebo kódu na odhalenie skrytých vzorov alebo automatizáciu procesov.",
+        "Baví ma myšlienka presného miešania, čistenia a testovania fyzických látok v laboratóriu, aby som videl, ako reagujú.",
+        "Chcem pracovať na riešení masívnych globálnych výziev (ako klíma či choroby), aj keď sa s ľuďmi, ktorým pomáham, nikdy osobne nestretnem.",
+        "Fascinuje ma, ako mikroskopické veci — ako jediná bunka, molekula alebo mikročip — dokážu plne ovládať svet.",
+        "Mám silnú motiváciu priamo chápať ľudí, komunikovať s nimi a zlepšovať ich každodenný život.",
+        "Rád analyzujem, ako moc, kultúra, jazyk a ľudské správanie utvárajú históriu, namiesto zamerania sa čisto na prírodné vedy.",
+        "Chcem fyzicky tvoriť veci — prototypy, obvody alebo konštrukcie — kde sa môžem výsledku dotknúť a vidieť ho fungovať.",
+        "Keď sa pozriem na produkt, systém alebo budovu, neustále premýšľam nad tým, ako by mohol byť jeho dizajn krajší alebo intuitívnejší.",
+        "Rád sa strácam v zložitejších hlavolamoch a čistej logike, aj keď nemajú okamžité reálne využitie."
+      ]
+    };
+
+    const FIELDS_I18N = {
+      sk: {
+        materials: {
+          name: "Materiálové vedy",
+          what: "Prečo sa látky správajú tak, ako sa správajú, a ako vynájsť materiály s lepšími vlastnosťami.",
+          obsessed: "Čo robí materiál pevným, ohybným, priehľadným alebo schopným vydržať štart rakety.",
+          tuesday: "Naťahovanie novej zliatiny alebo plastu v stroji, kým nepraskne, a meranie kedy a prečo sa to stalo.",
+          hook: "Pavúčie hodváb je na svoju hmotnosť pevnejšie ako oceľ. Veľká časť odboru sa snaží napodobniť materiály, ktoré príroda dávno vyvinula.",
+          future: "Batérie, solárne články a nízkouhlíkové stavby narážajú na hranice súčasných materiálov."
+        },
+        compchem: {
+          name: "Počítačová a teoretická chémia",
+          what: "Predpovedanie správania a reakcií molekúl pomocou fyziky a matematiky predtým alebo namiesto testovania v laboratóriu.",
+          obsessed: "Čo sa vlastne deje s elektrónmi a atómami počas reakcie v časoch a mierkach príliš rýchlych a malých na priame pozorovanie.",
+          tuesday: "Spustenie simulácie štruktúry a energie molekuly a porovnanie predpovede s reálnym meraním.",
+          hook: "Nobelova cena za chémiu za rok 2013 bola udelená za metódy simulácie chemických reakcií na počítači."
+        },
+        biophys: {
+          name: "Biofyzika",
+          what: "Využitie nástrojov fyziky na skúmanie toho, ako si život udržiava svoju štruktúru.",
+          obsessed: "Sily, energia a pohyb vo vnútri jedinej živej bunky.",
+          tuesday: "Použitie laserového lúča na uchopenie jednej molekuly a meranie sily, ktorou ťahá.",
+          hook: "Bunka nie je len vrecko s polievkou. Zoskupuje sa do kvapiek ako olej vo vode, čo sa ukazuje ako fyzikálny problém."
+        },
+        geophys: {
+          name: "Geofyzika",
+          what: "Fyzika zameraná na celú planétu.",
+          obsessed: "Čo sa deje v Zemi tisíce kilometrov pod našimi nohami.",
+          tuesday: "Čítanie signálov zemetrasení na mapovanie vnútra planéty, podobne ako ultrazvuk mapuje telo.",
+          hook: "Nikdy sme nevŕtali ani zďaleka do stredu Zeme. Skoro všetko vieme vďaka počúvaniu jej otrasov."
+        },
+        astro: {
+          name: "Astrofyzika",
+          what: "Fyzika všetkého vo vesmíre mimo Zeme.",
+          obsessed: "Ako v skutočnosti fungujú hviezdy, galaxie a čierne diery.",
+          tuesday: "Písanie kódu na simuláciu zanikajúcej hviezdy alebo prechádzanie údajov z teleskopu.",
+          hook: "Zlato v prsteni vzniklo pri zrážke dvoch neutrónových hviezd dlho predtým, než vzniklo Slnko."
+        },
+        aero: {
+          name: "Letecké a kozmické inžinierstvo",
+          what: "Konštruovanie vecí, ktoré lietajú a nespadnú z oblohy.",
+          obsessed: "Ako prúdi vzduch okolo krídla a ako zvládnuť vysoké rýchlosti.",
+          tuesday: "Testovanie tvaru krídla v simulovanom veternom tuneli na zníženie odporu.",
+          hook: "Krídlo nie je vysávané nahor. Ohýba vzduch nadol a vzduch tlačí naspäť podľa Newtonových zákonov."
+        },
+        civil: {
+          name: "Stavebné inžinierstvo a statika",
+          what: "Navrhovanie stavieb tak, aby zostali bezpečne stáť.",
+          obsessed: "Koľko toho most, veža alebo tunel znesie, kým nezlyhá.",
+          tuesday: "Výpočet nosnosti nosníka a preverenie, čo by s ním spravilo zemetrasenie.",
+          hook: "Každá konštrukcia je navrhnutá tak, aby sa trochu ohýbala. Mrakodrap, ktorý by sa vo vetre nepohol, by praskol."
+        },
+        ml: {
+          name: "Strojové učenie a AI",
+          what: "Budovanie systémov, ktoré sa učia vzory z príkladov namiesto prísneho určovania pravidiel.",
+          obsessed: "Ako prinútiť stroj zlepšovať sa v činnosti s pribúdajúcimi dátami.",
+          tuesday: "Trénovanie modelu na príkladoch, sledovanie neúspechov a úprava parametrov.",
+          hook: "Jazykovému modelu nikto nedal učebnicu gramatiky. Naučil sa ju čítaním ako malé dieťa, len rýchlejšie.",
+          future: "AI sa integruje do takmer každého odboru rýchlejšie, než inštitúcie stíhajú školiť odborníkov."
+        },
+        robotics: {
+          name: "Robotika",
+          what: "Dávanie tela strojom a ich učenie, ako ho používať.",
+          obsessed: "Ako stroj vníma svet a pohybuje sa v ňom bez toho, aby niečo rozbil.",
+          tuesday: "Ladenie, prečo rameno robota opakovane míňa objekt o dva centimetre.",
+          hook: "Chôdza je jedna z najťažších vecí na naučenie robota. Vy to robíte bez rozmýšľania, robot musí riešiť fyziku pri každom kroku."
+        },
+        neuro: {
+          name: "Neuroveda",
+          what: "Zisťovanie, ako hromada tkaniva vytvára myšlienky, pamäť a vaše „ja“.",
+          obsessed: "Ako sa signály pohybujú mozgom a menia sa na zážitky.",
+          tuesday: "Nahrávanie elektrickej aktivity neurónov počas rozhodovania.",
+          hook: "Váš mozog spotrebuje približne toľko energie ako slabá žiarovka na činnosti, ktoré nezvládne ani superpočítač."
+        },
+        sciillus: {
+          name: "Vedecká ilustrácia a vizualizácia",
+          what: "Kreslenie a návrh vizuálov, ktoré robia vedu a živé organizmy okamžite pochopiteľnými.",
+          obsessed: "Ako zobraziť presné biologické skutočnosti tak, aby boli zároveň krásne.",
+          tuesday: "Skicovanie orgánu podľa podkladov a zdokonaľovanie kresby pre laickú verejnosť.",
+          hook: "Pred vznikom fotografie boli ilustrátori jediným spôsobom, ako vidieť vnútro bunky či anatomické detaily."
+        },
+        cogsci: {
+          name: "Kognitívna veda",
+          what: "Reverzné inžinierstvo mysle spájaním poznatkov z viacerých vedných odborov.",
+          obsessed: "Čím myslenie v skutočnosti je — u ľudí aj u strojov.",
+          tuesday: "Navrhovanie experimentu na zachytenie predvídateľnej chyby ľudskej mysle.",
+          hook: "Rovnaké ilúzie, ktoré oklamú vaše oči, dokážu oklamať aj systémy umelej inteligencie."
+        },
+        complling: {
+          name: "Počítačová lingvistika",
+          what: "Učenie strojov pracovať s ľudským jazykom a využívanie strojov na jeho pochopenie.",
+          obsessed: "Ako vzniká význam zo zvukov, slov a jazykovej štruktúry.",
+          tuesday: "Tvorba modelu, ktorý dokáže rozlíšiť, či dve vety znamenajú to isté.",
+          hook: "Každý jazyk na Zemi sa riadi hlbokými pravidlami, ktoré sami hovoriaci nevedia vysvetliť."
+        },
+        envsci: {
+          name: "Environmentálna veda",
+          what: "Ako sa navzájom ovplyvňujú živé organizmy a ich životné prostredie.",
+          obsessed: "Interakcia znečistenia, klímy a ekosystémov a možnosti nápravy škôd.",
+          tuesday: "Testovanie chemického zloženia vody v rieke na odhalenie zdroja znečistenia.",
+          hook: "Jediná čajová lyžička zdravej pôdy obsahuje viac živých organizmov než je ľudí na Zemi.",
+          future: "Ekosystémy pod tlakom znečistenia a využívania krajiny potrebujú odborníkov na meranie a znižovanie škôd."
+        },
+        ocean: {
+          name: "Oceánografia",
+          what: "Oceán ako obrovský, pohybujúci sa a živý systém.",
+          obsessed: "Ako prúdy, chémia a morský život utvárajú celú planétu.",
+          tuesday: "Spúšťanie prístrojov kilometre hlboko a čítanie odoslaných dát.",
+          hook: "Oceán produkuje viac ako polovicu kyslíka, ktorý dýchate, najmä vďaka mikroskopickým rastlinám."
+        },
+        climate: {
+          name: "Klimatológia",
+          what: "Atmosféra a oceán ako jeden obrovský fyzikálny problém.",
+          obsessed: "Ako sa energia pohybuje vzduchom a vodou planéty a kam smeruje.",
+          tuesday: "Spustenie simulácie klímy a jej porovnanie so storočím reálnych meraní.",
+          hook: "Modelom predpovedajúcim budúce storočie sa dôveruje vďaka tomu, že dokážu presne „predpovedať“ minulosť.",
+          future: "Vlády, mestá a firmy budú stále potrebovať odborníkov na modelovanie a predpovedanie zmeny klímy."
+        },
+        biosecurity: {
+          name: "Syntetická biológia a biobezpečnosť",
+          what: "Pohľad na živé bunky ako na preprogramovateľné stroje a budovanie obrany proti patogénom.",
+          obsessed: "Prepisovanie DNA na tvorbu užitočných funkcií a predpovedanie rizík úniku.",
+          tuesday: "Návrh úseku genetického kódu pre nový materiál alebo modelovanie šírenia patogénu.",
+          hook: "Rovnaká technológia na výrobu inzulínu by teoreticky mohla byť použitá na vytvorenie pandémie.",
+          future: "Ako sa biotechnológia stáva dostupnejšou, ľudstvo potrebuje odborníkov na budovanie globálnej ochrany pred biorizikami."
+        },
+        cheminfo: {
+          name: "Cheminformatika a vývoj liekov",
+          what: "Vyhľadávanie, porovnávanie a predpovedanie správania molekúl pomocou počítačov.",
+          obsessed: "Ktorá z miliónov molekúl stojí za čas a náklady na reálnu syntézu a testovanie.",
+          tuesday: "Virtuálny skríning tisícov zlúčenín voči cieľovému proteínu a výber najlepších kandidátov.",
+          hook: "Väčšina nových kandidátov na lieky sa dnes najskôr testuje v počítači."
+        },
+        nano: {
+          name: "Nanotechnológia",
+          what: "Inžinierstvo na úrovni jednotlivých molekúl.",
+          obsessed: "Ako sa menia vlastnosti materiálov pri extrémne malých rozmeroch.",
+          tuesday: "Usporiadanie atómov do štruktúry a jej zobrazenie špeciálnym mikroskopom.",
+          hook: "Zlato má zlatú farbu len vo veľkom množstve; pri zmenšení na nanočastice sčervenie alebo sfialovie."
+        },
+        designeng: {
+          name: "Dizajnové inžinierstvo",
+          what: "Spojenie funkčnosti vecí s vytváraním produktov, ktoré ľudia radi používajú.",
+          obsessed: "Premena reálneho ľudského problému na fungujúci objekt alebo systém.",
+          tuesday: "Skicovanie produktu, stavba prototypu a testovanie na reálnych užívateľoch.",
+          hook: "Dobrý dizajn je neviditeľný. Kľučku, ktorá funguje intuitívne, si nikdy nevšimnete."
+        },
+        arch: {
+          name: "Architektúra",
+          what: "Navrhovanie priestorov, v ktorých ľudia žijú, pracujú a stretávajú sa.",
+          obsessed: "Ako budova utvára pocity a správanie ľudí vo svojom vnútri.",
+          tuesday: "Vyvažovanie estetického nápadu s gravitáciou, rozpočtom a normami.",
+          hook: "Rozloženie chodieb v nemocnici dokáže merateľne ovplyvniť rýchlosť zotavenia pacientov."
+        },
+        quantum: {
+          name: "Kvantové počítače",
+          what: "Stavba počítačov fungujúcich na podivných pravidlách mikrosveta.",
+          obsessed: "Využitie kvantových javov na riešenie problémov, ktoré bežné počítače nezvládnu.",
+          tuesday: "Boj o udržanie krehkého kvantového stavu na niekoľko mikrosekúnd.",
+          hook: "Kvantový bit môže byť 0 a 1 zároveň; prepojením viacerých sa umožnia nemožné výpočty."
+        },
+        epi: {
+          name: "Epidemiológia",
+          what: "Veda o šírení chorôb v populácii.",
+          obsessed: "Prečo niektoré ohniská zaniknú a iné sa nekontrolovateľne rozšíria.",
+          tuesday: "Tvorba modelu šírenia nákazy na predpoveď jej ďalšieho postupu.",
+          hook: "Všetky grafy „sploštenia krivky“ počas pandémií pochádzajú z tohto odboru.",
+          future: "Šírenie nákaz je opakujúca sa udalosť a svet potrebuje odborníkov na sledovanie a modelovanie epidémií."
+        },
+        biomed: {
+          name: "Biomedicínske inžinierstvo",
+          what: "Inžinierstvo zamerané priamo na ľudské telo.",
+          obsessed: "Vývoj prístrojov, ktoré opravujú, nahrádzajú alebo monitorujú telo.",
+          tuesday: "Testovanie, či umelý kĺb alebo snímač vydrží reálne používanie.",
+          hook: "Niektoré protézy sú dnes prepojené s nervami, takže ich človek ovláda myšlienkami.",
+          future: "Starnutie populácie zvyšuje dopyt po lepších zdravotníckych pomôckach a diagnostike."
+        },
+        sysbio: {
+          name: "Systémová biológia",
+          what: "Štúdium života ako siete namiesto skúmania jednotlivých častí oddelene.",
+          obsessed: "Ako tisíce molekúl spolupracujú pri udržaní fungovania bunky.",
+          tuesday: "Modelovanie siete génov na predpovedanie následkov vypnutia jedného z nich.",
+          hook: "Poznať každú časť bunky nestačí, rovnako ako poznať každé slovo neprezradí dej knihy."
+        },
+        datasci: {
+          name: "Dátová veda",
+          what: "Získavanie reálnych odpovedí z nespracovaných kôp dát.",
+          obsessed: "Užitočný signál ukrytý v šume.",
+          tuesday: "Čistenie dát a vyhľadanie jedného vzoru, na ktorom naozaj záleží.",
+          hook: "Najťažšou časťou takmer nikdy nie je matematika, ale zistenie, že dáta klamú.",
+          future: "Zdravotníctvo, klimatická politika aj trhy generujú viac dát, než človek dokáže ručne spracovať."
+        },
+        econ: {
+          name: "Kvantitatívna ekonómia",
+          what: "Skúmanie správania ľudí, peňazí a volieb pomocou presných čísel.",
+          obsessed: "Prečo trhy, stimuly a rozhodnutia fungujú tak, ako fungujú.",
+          tuesday: "Testovanie hypotéz o ľudskom správaní na miliónoch reálnych transakcií.",
+          hook: "Veľká časť modernej ekonómie má bližšie k fyzike než k podnikaniu."
+        },
+        geol: {
+          name: "Zemské systémy a geológia",
+          what: "Čítanie histórie a mechanizmov planéty priamo z hornín.",
+          obsessed: "Ako sa Zem zformovala a ako sa neustále mení.",
+          tuesday: "Príprava tenkého rezu horniny a skúmanie jej príbehu pod mikroskopom.",
+          hook: "Na Zemi existujú horniny staršie ako 4 miliardy rokov, vytvorené pred vznikom kyslíka."
+        },
+        geoinfo: {
+          name: "Geoinformatika a diaľkový prieskum Zeme",
+          what: "Premena satelitných snímok na mapy zmien povrchu planéty.",
+          obsessed: "Zmeny lesov, pobreží či miest merané z obežnej dráhy.",
+          tuesday: "Spracovanie údajov o odlesňovaní alebo úbytku ľadu zo satelitov.",
+          hook: "Väčšina poznatkov o topení ľadovcov pochádza zo satelitných meraní z vesmíru."
+        },
+        acoustics: {
+          name: "Akustika a hudobné technológie",
+          what: "Veda a inžinierstvo zvuku.",
+          obsessed: "Ako zvuk vzniká, tvaruje sa a vníma.",
+          tuesday: "Ladenie akustiky miestnosti alebo vývoj softvéru na spracovanie zvuku.",
+          hook: "Koncertná sála sa navrhuje rovnako dôkladne ako most; posunutím steny sa zmení zvuk."
+        },
+        gendesign: {
+          name: "Počítačový a generatívny dizajn",
+          what: "Využitie matematických pravidiel a algoritmov na generovanie tvarov a vzorov.",
+          obsessed: "Čo sa stane, keď dizajn popíšete rovnicou a necháte počítač preskúmať možnosti.",
+          tuesday: "Písanie programu na generovanie stoviek variácií vzoru a výber najlepších.",
+          hook: "Niektoré moderné budovy neboli nakreslené ručne, ale vyrástli z matematického pravidla."
+        },
+        gamedesign: {
+          name: "Herný dizajn",
+          what: "Tvorba interaktívnych svetov a pravidiel, ktoré ich robia zábavnými.",
+          obsessed: "Čo robí systém výzvou, férovým a zábavným pre hráčov.",
+          tuesday: "Úprava pravidla a sledovanie hráčov, či sa zábavnosť zvýšila.",
+          hook: "Zábava je dizajnový problém, ktorý sa dá reálne študovať."
+        },
+        polisci: {
+          name: "Politológia a politická psychológia",
+          what: "Skúmanie fungovania moci, jej držiteľov a dôvodov správania voličov.",
+          obsessed: "Rozdiel medzi teoretickým fungovaním inštitúcií a ich reálnym správaním.",
+          tuesday: "Tvorba modelu správania voličov z prieskumov alebo analýza zlyhania politiky.",
+          hook: "Aj malé zmeny v úprave hlasovacieho lístka dokážu posunúť výsledok volieb."
+        },
+        compsocsci: {
+          name: "Počítačové spoločenské vedy",
+          what: "Využitie dát a sietí na skúmanie šírenia názorov a správania v populácii.",
+          obsessed: "Prečo sa niektoré myšlienky šíria lavínovo a iné zaniknú.",
+          tuesday: "Mapovanie sociálnej siete z príspevkov a modelovanie šírenia informácie.",
+          hook: "Šírenie dezinformácií sa analyzuje podobne ako šírenie epidémií."
+        },
+        aialignment: {
+          name: "Bezpečnosť a správa AI",
+          what: "Výzva zabezpečiť, aby pokročilé systémy AI konali v súlade s cieľmi ľudstva.",
+          obsessed: "Matematická garancia, že inteligentný systém nenájde nebezpečné medzery.",
+          tuesday: "Testovanie modelov na nebezpečné správanie alebo návrh medzinárodných zmlúv.",
+          hook: "Spoľahlivá kontrola superinteligentného systému je kľúčový nevyriešený problém.",
+          future: "Existuje celosvetový nedostatok odborníkov na technickú bezpečnosť a správu AI."
+        },
+        bioanthro: {
+          name: "Biologická a evolučná antropológia",
+          what: "Štúdium ľudskej evolúcie prostredníctvom kostí, génov a biológie.",
+          obsessed: "Čo dokáže dokázať jediný fragment fosílie či kosti.",
+          tuesday: "Meranie fosílnej lebky alebo porovnávanie starovekej DNA.",
+          hook: "Väčšina ľudí nosí v sebe malé percento neandertálskej DNA."
+        },
+        digitalhum: {
+          name: "Digitálne humanitné vedy",
+          what: "Využitie počítačových nástrojov na skúmanie histórie a kultúry vo veľkom rozsahu.",
+          obsessed: "Skryté vzorce v tisíckach dokumentov neviditeľné pri čítaní po jednom.",
+          tuesday: "Textová analýza novín za celé storočie na sledovanie zmeny významu slov.",
+          hook: "Softvér dokáže určiť autora anonymného historického dokumentu podľa rytmu viet."
+        },
+        behavioralecon: {
+          name: "Behaviorálna ekonómia",
+          what: "Skúmanie, prečo sa ľudia a trhy nesprávajú podľa čisto teoretických modelov.",
+          obsessed: "Opakovateľné odchýlky ľudského rozhodovania od čistej racionality.",
+          tuesday: "Experiment na overenie, či zmena predvolenej možnosti ovplyvní voľbu ľudí.",
+          hook: "Automatické zapojenie do dôchodkového sporenia zásadne zvyšuje účasť."
+        },
+        energysys: {
+          name: "Energetické systémy",
+          what: "Inžinierstvo a prechod na nízkouhlíkovú sieť, solárne a veterné zdroje.",
+          obsessed: "Udržanie stability elektrickej siete pri kolísavých zdrojoch.",
+          tuesday: "Modelovanie kapacity batériových úložísk pre obdobie bez vetra a slnka.",
+          hook: "Elektrická sieť musí vyrovnávať ponuku a dopyt v zlomkoch sekundy."
+        },
+        climatepolicy: {
+          name: "Klimatická politika a environmentálna ekonómia",
+          what: "Inštitucionálna a ekonomická stránka zmeny klímy, trhy s uhlíkom a regulácie.",
+          obsessed: "Spôsoby, ako spoplatniť znečistenie bez poškodenia ekonomiky.",
+          tuesday: "Modelovanie dopadu ceny uhlíka na emisie a ekonomické záťaže.",
+          hook: "Uhlíková daň je jedným z najviac skúmaných nástrojov ekonómov."
+        },
+        urbanplanning: {
+          name: "Mestské plánovanie a inteligentné mestá",
+          what: "Plánovanie a riadenie miest ako prepojených systémov dopravy a bývania.",
+          obsessed: "Prečo mesto funguje pre niekoho dobre a pre iného zle.",
+          tuesday: "Modelovanie vplyvu novej autobusovej linky na plynulosť dopravy.",
+          hook: "Koordinácia semaforov v zelenej vlne výrazne skracuje čas dojazdu."
+        },
+        culturalheritage: {
+          name: "Kultúrne dedičstvo a múzejníctvo",
+          what: "Kurátorská práca, ochrana a prezentácia príbehov objektov a kultúr.",
+          obsessed: "Ako priblížiť objekt z minulosti človeku dneška.",
+          tuesday: "Návrh vystavenia a popisu exponátu pre návštevníkov.",
+          hook: "Múzeá ročne vracajú tisíce artefaktov do krajín ich pôvodu."
+        },
+        cybersec: {
+          name: "Kybernetická bezpečnosť a kryptografia",
+          what: "Ochrana informácií a matematické dokazovanie bezpečnosti systémov.",
+          obsessed: "Nájdenie zraniteľnosti v systéme skôr, než ju zneužije útočník.",
+          tuesday: "Testovanie odolnosti vlastného systému alebo dokazovanie nemožnosti útoku.",
+          hook: "Mnohé dnešné šifry budú zraniteľné voči kvantovým počítačom."
+        },
+        astrobio: {
+          name: "Astrobiológia",
+          what: "Hľadanie života mimo Zeme a skúmanie extrémnych podmienok na Zemi.",
+          obsessed: "Čo sa dá považovať za skutočné stopy života vo vesmíre.",
+          tuesday: "Analýza dát z marsovského vozidla alebo vzdialeného mesiaca.",
+          hook: "Kandidáti na život v slnečnej sústave sú aj v oceánoch pod ľadom mesiacov Jupitera."
+        },
+        hci: {
+          name: "Interakcia človeka s počítačom (UX)",
+          what: "Pochopenie, ako ľudia používajú technológie, a návrh rozhraní podľa ľudského vnímania.",
+          obsessed: "Rozdiel medzi predpokladaným a reálnym používateľským správaním.",
+          tuesday: "Sledovanie používateľov pri plnení úlohy v novom rozhraní a identifikácia problémov.",
+          hook: "Kvalitný UX výskum odhalí presnú príčinu frustrácie používateľa."
+        },
+        compstructbio: {
+          name: "Počítačová štrukturálna biológia",
+          what: "Mapovanie vlastností a dynamiky biologických molekúl pomocou strojového učenia.",
+          obsessed: "Neusporiadané proteíny a ich vplyv na ľudské zdravie.",
+          tuesday: "Porovnávanie predpovedí strojového učenia s fyzikálnymi dátami.",
+          hook: "Pochopenie fyziky neusporiadaných proteínov je kľúčom k liečbe neurodegeneratívnych ochorení.",
+          future: "AI zmenila predpovedanie v biológii, no chýbajú odborníci s presahom do biofyziky."
+        },
+        hwsec: {
+          name: "Bezpečnosť hardvéru a infraštruktúry",
+          what: "Hľadanie zraniteľností vo fyzickej a embedded vrstve digitálneho sveta.",
+          obsessed: "Ako možno obísť bezpečný softvér pomocou fyzických nástrojov.",
+          tuesday: "Analýza fyzických prístupových kariet a rádiofrekvenčných signálov.",
+          hook: "Ak útočník fyzicky emuluje kľúč od dverí, softvérový firewall nepomôže.",
+          future: "Automatizácia infraštruktúry vyžaduje inžinierov so zameraním na hardvérovú bezpečnosť."
+        }
+      }
+    };
+
+    function getPrim(id) {
+      const p = PRIMS[id];
+      if (!p) return null;
+      const trans = (PRIMS_I18N[currentLang] && PRIMS_I18N[currentLang][id]) || {};
+      return {
+        name: trans.name || p.name,
+        blurb: trans.blurb || p.blurb,
+        rgb: p.rgb
+      };
+    }
+
+    function getDimLabel(d) {
+      if (DIMLABEL_I18N[currentLang] && DIMLABEL_I18N[currentLang][d]) {
+        return DIMLABEL_I18N[currentLang][d];
+      }
+      return DIMLABEL[d] || d;
+    }
+
+    function getStatement(i) {
+      const s = STATEMENTS[i];
+      if (!s) return null;
+      const t = (STATEMENTS_I18N[currentLang] && STATEMENTS_I18N[currentLang][i]) || s.t;
+      return { t, w: s.w };
+    }
+
+    function getField(id) {
+      const f = FIELDS.find(x => x.id === id);
+      if (!f) return null;
+      const trans = (FIELDS_I18N[currentLang] && FIELDS_I18N[currentLang][id]) || {};
+      return {
+        id: f.id,
+        par: f.par,
+        disp: f.disp,
+        name: trans.name || f.name,
+        what: trans.what || f.what,
+        obsessed: trans.obsessed || f.obsessed,
+        tuesday: trans.tuesday || f.tuesday,
+        hook: trans.hook || f.hook,
+        future: trans.future || f.future
+      };
+    }
+
     const SVGNS = "http://www.w3.org/2000/svg";
 
     /* ============ DATA ============ */
@@ -742,8 +1299,26 @@
       </div>`;
       return row;
     }
-    PORDER.forEach(p => subjWrap.appendChild(sliderRow("subj_" + p, PRIMS[p].name, "Dislike", "Love")));
-    STATEMENTS.forEach((s, i) => dispWrap.appendChild(sliderRow("disp_" + i, s.t, "Not me", "Very me")));
+    function buildQuizSliders() {
+      subjWrap.innerHTML = ""; dispWrap.innerHTML = "";
+      const labelDislike = currentLang === "sk" ? "Nepáči sa mi" : "Dislike";
+      const labelLove = currentLang === "sk" ? "Páči sa mi" : "Love";
+      const labelNotMe = currentLang === "sk" ? "To nie som ja" : "Not me";
+      const labelVeryMe = currentLang === "sk" ? "To som úplne ja" : "Very me";
+      PORDER.forEach(p => subjWrap.appendChild(sliderRow("subj_" + p, getPrim(p).name, labelDislike, labelLove)));
+      STATEMENTS.forEach((s, i) => dispWrap.appendChild(sliderRow("disp_" + i, getStatement(i).t, labelNotMe, labelVeryMe)));
+    }
+    buildQuizSliders();
+    function refreshQuizSliders() {
+      const values = {};
+      allQuizSliders().forEach(s => values[s.id] = s.value);
+      buildQuizSliders();
+      allQuizSliders().forEach(s => {
+        if (values[s.id] !== undefined) s.value = values[s.id];
+        wireSlider(s);
+        styleSlider(s);
+      });
+    }
 
     /* ---- slider feel: colour, sound, haptics ---- */
     const subjColor = {}; PORDER.forEach(p => subjColor["subj_" + p] = PRIMS[p].rgb);
@@ -961,10 +1536,13 @@
     allQuizSliders().forEach(wireSlider);
 
     const soundBtn = byId("soundToggle");
+    const soundTxt = byId("soundToggleTxt");
     if (soundBtn) soundBtn.addEventListener("click", () => {
       const on = Sound.toggle();
       soundBtn.classList.toggle("off", !on);
-      soundBtn.lastChild.textContent = on ? "Sound on" : "Sound off";
+      const txt = on ? (I18N_STATIC[currentLang].sound_on || "Sound on") : (I18N_STATIC[currentLang].sound_off || "Sound off");
+      if (soundTxt) soundTxt.textContent = txt;
+      else soundBtn.lastChild.textContent = txt;
     });
 
     // colour each slider thumb accent live-ish (static: leave default blue)
@@ -1018,17 +1596,17 @@
     }
     function topMatchDims(hat, Uplus, n) {
       return DIMS.map(d => ({ d, v: hat[d] * Uplus[d] })).filter(x => x.v > 0.001)
-        .sort((a, b) => b.v - a.v).slice(0, n).map(x => DIMLABEL[x.d]);
+        .sort((a, b) => b.v - a.v).slice(0, n).map(x => getDimLabel(x.d));
     }
     function culpritDim(f, U) {
       const raw = fieldVecs[f.id].raw;
       let best = null, bv = 0;
       DIMS.forEach(d => { if (U[d] < 0 && raw[d] > 0) { const v = raw[d] * (-U[d]); if (v > bv) { bv = v; best = d; } } });
-      return best ? DIMLABEL[best] : null;
+      return best ? getDimLabel(best) : null;
     }
     function topPositiveConnect(hat, Uplus) {
       const arr = DIMS.map(d => ({ d, v: hat[d] * Uplus[d] })).filter(x => x.v > 0.001).sort((a, b) => b.v - a.v);
-      return arr.length ? DIMLABEL[arr[0].d] : "what you like";
+      return arr.length ? getDimLabel(arr[0].d) : (currentLang === "sk" ? "to, čo vás baví" : "what you like");
     }
 
     function renderResults(res) {
@@ -1036,17 +1614,21 @@
       wc.innerHTML = ""; sc.innerHTML = "";
       byId("zoneThin").style.display = res.thin ? "" : "none";
       byId("zoneWheel").style.display = res.thin ? "none" : "";
+      const seeMapText = currentLang === "sk" ? "Zobraziť na mape →" : "See it on the map →";
       if (res.thin) {
-        byId("thinMsg").textContent = "You left the sliders close to the middle, so there wasn't a strong signal to work from, and showing you a \"top match\" from that would have been closer to a coin flip than a real result. That's completely fine, plenty of people haven't figured out their likes yet. Go back and move a few sliders on anything you have even a mild opinion about, one or two is often enough, or start with the future-facing fields below instead.";
+        byId("thinMsg").textContent = currentLang === "sk"
+          ? "Posuvníky ste nechali blízko stredu, takže sme nezískali silný signál a zobrazenie „najlepšej zhody“ by bolo skôr hodom mincou než skutočným výsledkom. To je úplne v poriadku, mnohí ľudia zatiaľ nemajú vyhranené preferencie. Vráťte sa a posuňte niekoľko posuvníkov na čokoľvek, na čo máte aspoň mierny názor (jeden alebo dva často stačia), alebo začnite s odbormi budúcnosti nižšie."
+          : "You left the sliders close to the middle, so there wasn't a strong signal to work from, and showing you a \"top match\" from that would have been closer to a coin flip than a real result. That's completely fine, plenty of people haven't figured out their likes yet. Go back and move a few sliders on anything you have even a mild opinion about, one or two is often enough, or start with the future-facing fields below instead.";
         byId("zoneStretch").style.display = "none";
       } else {
         res.wheel.forEach(x => {
+          const fLoc = getField(x.f.id);
           const c = mix(x.f.par);
           const dims = topMatchDims(x.hat, res.Uplus, 3);
           const card = document.createElement("div"); card.className = "rcard";
           card.style.borderLeftColor = rgb(c); card.style.setProperty("--fc", c.join(","));
-          card.innerHTML = `<div class="rt"><h4 style="color:${rgb(c)}">${x.f.name}</h4><span class="go">See it on the map →</span></div>
-          <p class="rw">${x.f.what}</p>
+          card.innerHTML = `<div class="rt"><h4 style="color:${rgb(c)}">${fLoc.name}</h4><span class="go">${seeMapText}</span></div>
+          <p class="rw">${fLoc.what}</p>
           ${dims.length ? `<div class="tags">${dims.map(d => `<span class="tag">${d}</span>`).join("")}</div>` : ""}`;
           card.addEventListener("mouseenter", () => Sound.hover(hoverPitch(x.f.id)));
           card.addEventListener("click", () => { showView("atlas"); atlasSelect(x.f.id); });
@@ -1056,12 +1638,13 @@
         else {
           byId("zoneStretch").style.display = "";
           res.stretch.forEach(x => {
+            const fLoc = getField(x.f.id);
             const c = mix(x.f.par);
             const why = stretchWhyText(x, res);
             const card = document.createElement("div"); card.className = "rcard";
             card.style.borderLeftColor = rgb(c); card.style.setProperty("--fc", c.join(","));
-            card.innerHTML = `<div class="rt"><h4 style="color:${rgb(c)}">${x.f.name}</h4><span class="go">See it on the map →</span></div>
-            <p class="rw">${x.f.what}</p>
+            card.innerHTML = `<div class="rt"><h4 style="color:${rgb(c)}">${fLoc.name}</h4><span class="go">${seeMapText}</span></div>
+            <p class="rw">${fLoc.what}</p>
             <p class="why">${why}</p>`;
             card.addEventListener("mouseenter", () => Sound.hover(hoverPitch(x.f.id)));
             card.addEventListener("click", () => { showView("atlas"); atlasSelect(x.f.id); });
@@ -1073,23 +1656,28 @@
     }
 
     function renderFutureZone(thin) {
+      const seeMapText = currentLang === "sk" ? "Zobraziť na mape →" : "See it on the map →";
       byId("futureSub").textContent = thin
-        ? "a different way in, not matched to your answers"
-        : "a different lens, also not matched to your answers";
+        ? (currentLang === "sk" ? "iná cesta, neprispôsobená vašim odpovediam" : "a different way in, not matched to your answers")
+        : (currentLang === "sk" ? "iný pohľad, taktiež neprispôsobený vašim odpovediam" : "a different lens, also not matched to your answers");
       byId("futureIntro").innerHTML = thin
-        ? `Since there wasn't much to go on above, here's another way in. These aren't picked for you, they're picked for where the world seems to be heading over the next couple of decades. The framing owes a debt to <a href="https://80000hours.org" target="_blank" rel="noopener">80,000 Hours</a>, which researches this question in far more depth than we can here.`
-        : `A different lens on the same set of fields, not matched to what you said, but to broad trends many people expect to matter more over the next couple of decades. Worth weighing alongside your own interests, not instead of them. Framing inspired by <a href="https://80000hours.org" target="_blank" rel="noopener">80,000 Hours</a>, which researches this question in far more depth.`;
+        ? (currentLang === "sk"
+            ? `Keďže vyššie nebolo veľa informácií, tu je iná cesta. Tieto odbory nie sú vybrané pre vás osobne, ale podľa toho, kam sa svet podľa očakávaní posunie v najbližších desaťročiach. Koncepcia čerpá z projektu <a href="https://80000hours.org" target="_blank" rel="noopener">80,000 Hours</a>, ktorý sa tejto otázke venuje do hĺbky.`
+            : `Since there wasn't much to go on above, here's another way in. These aren't picked for you, they're picked for where the world seems to be heading over the next couple of decades. The framing owes a debt to <a href="https://80000hours.org" target="_blank" rel="noopener">80,000 Hours</a>, which researches this question in far more depth than we can here.`)
+        : (currentLang === "sk"
+            ? `Iný pohľad na rovnaký súbor odborov, neprispôsobený tomu, čo ste uviedli, ale širším trendom, od ktorých sa v nasledujúcich desaťročiach očakáva veľký dopad. Stojí za zváženie popri vlastných záujmoch. Inšpirované projektom <a href="https://80000hours.org" target="_blank" rel="noopener">80,000 Hours</a>.`
+            : `A different lens on the same set of fields, not matched to what you said, but to broad trends many people expect to matter more over the next couple of decades. Worth weighing alongside your own interests, not instead of them. Framing inspired by <a href="https://80000hours.org" target="_blank" rel="noopener">80,000 Hours</a>, which researches this question in far more depth.`);
       const fc = byId("futureCards"); fc.innerHTML = "";
       FUTURE_IDS.forEach(id => {
-        const f = FIELDS.find(x => x.id === id); if (!f) return;
-        const c = mix(f.par);
+        const fLoc = getField(id); if (!fLoc) return;
+        const c = mix(fLoc.par);
         const card = document.createElement("div"); card.className = "rcard";
         card.style.borderLeftColor = rgb(c); card.style.setProperty("--fc", c.join(","));
-        card.innerHTML = `<div class="rt"><h4 style="color:${rgb(c)}">${f.name}</h4><span class="go">See it on the map →</span></div>
-        <p class="rw">${f.what}</p>
-        <p class="why">${f.future}</p>`;
-        card.addEventListener("mouseenter", () => Sound.hover(hoverPitch(f.id)));
-        card.addEventListener("click", () => { showView("atlas"); atlasSelect(f.id); });
+        card.innerHTML = `<div class="rt"><h4 style="color:${rgb(c)}">${fLoc.name}</h4><span class="go">${seeMapText}</span></div>
+        <p class="rw">${fLoc.what}</p>
+        <p class="why">${fLoc.future}</p>`;
+        card.addEventListener("mouseenter", () => Sound.hover(hoverPitch(fLoc.id)));
+        card.addEventListener("click", () => { showView("atlas"); atlasSelect(fLoc.id); });
         fc.appendChild(card);
       });
     }
@@ -1103,39 +1691,83 @@
     function stretchWhyText(x, res) {
       const connect = topPositiveConnect(x.hat, res.Uplus);
       const culprit = culpritDim(x.f, res.U);
+      if (currentLang === "sk") {
+        return culprit
+          ? `Ľudí, ktorých láka ${connect}, toto často osloví. Vyžaduje však viac ${culprit}, než ako ste hodnotili, čo je jediná vec, pre ktorú nie je vo vašom hlavnom zozname.`
+          : `Trochu ďalej od toho, čo ste uviedli, ale dostatočne blízko k ${connect}, aby to stálo za pozretie.`;
+      }
       return culprit
         ? `People drawn to ${connect} often fall for this. It does lean on ${culprit} more than you rated, which is the only thing keeping it off your main list.`
         : `A little further from what you said, but close enough to ${connect} to be worth a look.`;
     }
     function buildExportPrompt(res, raw) {
-      if (res.thin) {
-        const futureLines = FUTURE_IDS.map(id => { const f = FIELDS.find(x => x.id === id); return `- **${f.name}**: ${f.what} (${f.future})`; }).join("\n");
-        return `I'm a high school student (around 15-17 years old) trying to figure out what to study at university. I used an academic atlas tool called Prism, but I didn't have strong enough preferences yet for it to match me with specific careers. That is completely fine!
+      if (currentLang === "sk") {
+        if (res.thin) {
+          const futureLines = FUTURE_IDS.map(id => { const f = getField(id); return `- **${f.name}**: ${f.what} (${f.future})`; }).join("\n");
+          return `Som študent strednej školy (približne 15 – 17 rokov) a snažím sa zistiť, čo študovať na vysokej škole. Použil som nástroj Prism, ale zatiaľ som nemal dostatočne vyhranené preferencie na to, aby ma priradil k špecifickým kariéram. To je úplne v poriadku!
 
-Instead, the tool showed me a list of "Future-Facing Fields." These were selected using impact frameworks (like 80,000 Hours) because they address massive, neglected, and solvable global bottlenecks over the next few decades:
+Namiesto toho mi nástroj ukázal zoznam „Odborov budúcnosti“. Tieto boli vybrané na základe dopadových rámcov (ako 80,000 Hours), pretože riešia masívne, zanedbávané a riešiteľné globálne výzvy v najbližších desaťročiach:
 
 ${futureLines}
 
-I'd like your help. Please act as a warm, highly knowledgeable career guide. I don't need to choose anything yet, I'm just exploring.
+Rád by som vás požiadal o pomoc. Vystupujte ako milý, vysoko erudovaný kariérny poradca. Zatiaľ si nemusím nič vybrať, iba preskúmavam možnosti.
 
-Here is how we will do this:
-1. **The Interview:** Ask me 2 or 3 engaging, unconventional questions about how I like to spend my time, how I solve problems, or what kind of environments I thrive in. The goal is to help me discover my "Ikigai" (the intersection of what I love, what I'm good at, and what the world needs).
-2. **The Connection:** Once I answer, connect my working style to 1 or 2 of the fields from the list above (or a different high-impact field you think fits better). 
-3. **The Rabbit Hole:** Suggest real, well-known YouTube channels or specific search terms I can look up to see a "day in the life" of someone working in that field. (Do NOT hallucinate or invent specific URL links—just give me the exact channel names or search queries).
+Taktiež budeme postupovať nasledovne:
+1. **Pohovor:** Položte mi 2 alebo 3 zaujímavé, neobvyklé otázky o tom, ako rád trávim čas, ako riešim problémy a v akom prostredí sa mi darí. Cieľom je pomôcť mi objaviť moje „Ikigai“ (prienik toho, čo milujem, v čom som dobrý a čo svet potrebuje).
+2. **Prepojenie:** Keď odpoviem, prepojte môj štýl práce s 1 alebo 2 odbormi zo zoznamu vyššie (alebo s iným perspektívnym odborom, ktorý podľa vás sedí lepšie).
+3. **Hlbšie preskúmanie:** Navrhnite reálne, známe YouTube kanály alebo konkrétne vyhľadávacie frázy, ktoré si môžem vyhľadať, aby som videl „bežný deň“ človeka pracujúceho v danom odbore. (NEMYLTE SI ani nevymýšľajte konkrétne URL odkazy – uveďte iba presné názvy kanálov alebo vyhľadávacie dopyty).
 
-Please start by asking me the questions!`;
+Začnite prosím tým, že mi položíte otázky!`;
+        }
+
+        const wheelLines = res.wheel.map(x => { const f = getField(x.f.id); return `- **${f.name}**: ${f.what}`; }).join("\n");
+        const stretchLines = res.stretch.map(x => { const f = getField(x.f.id); return `- **${f.name}**: ${f.what} (*Prečo tento odbor?* ${stretchWhyText(x, res)})`; }).join("\n");
+        const stretchBlock = res.stretch.length
+          ? `\nODBORY TESNE VEDĽA MOJEJ PARKETY (Odbory, ktoré by ma mohli príjemne prekvapiť):\n${stretchLines}\n`
+          : "";
+
+        const lovedSubj = PORDER.filter(p => raw.subj[p] >= 70).map(p => getPrim(p).name);
+        const dislikedSubj = PORDER.filter(p => raw.subj[p] <= 30).map(p => getPrim(p).name);
+        const trueStmts = STATEMENTS.filter((s, i) => raw.disp[i] >= 70).map((s, i) => `"${getStatement(i).t}"`);
+        const falseStmts = STATEMENTS.filter((s, i) => raw.disp[i] <= 30).map((s, i) => `"${getStatement(i).t}"`);
+
+        let selfLines = "";
+        if (lovedSubj.length) selfLines += `**Predmety, ktoré ma prirodzene bavia:** ${lovedSubj.join(", ")}\n`;
+        if (dislikedSubj.length) selfLines += `**Predmety, ktoré ma neoslovujú:** ${dislikedSubj.join(", ")}\n\n`;
+
+        if (trueStmts.length) selfLines += `**Môj štýl práce a preferencie dopadu (Tvrdenia, s ktorými som rozhodne súhlasil):**\n- ${trueStmts.join("\n- ")}\n\n`;
+        if (falseStmts.length) selfLines += `**Čomu sa chcem vyhnúť (Tvrdenia, s ktorými som nesúhlasil):**\n- ${falseStmts.join("\n- ")}\n`;
+
+        if (!selfLines) selfLines = "Väčšinu posuvníkov som nechal blízko stredu, takže zatiaľ nemám silné vyhranené záujmy ani výhrady.\n";
+
+        return `Som študent strednej školy (približne 15 – 17 rokov), ktorý preskúmava vysokoškolské odbory a kariérne možnosti. Použil som nástroj Prism, ktorý mapuje tradičné školské predmety na moderné, vysokodopadové interdisciplinárne odbory.
+
+Na základe mojich odpovedí mi nástroj odporučil nasledujúce odbory:
+
+MOJE HLAVNÉ ODBORY (Najlepšia zhoda s mojím profilom):
+${wheelLines}
+${stretchBlock}
+Taktiež tu je to, čo som uviedol o svojich obľúbených predmetoch a štýle práce:
+${selfLines}
+Rád by som vás požiadal o pomoc. Vystupujte ako milý, vysoko erudovaný kariérny poradca. Zatiaľ si nemusím nič vybrať, iba preskúmavam možnosti.
+
+Taktiež budeme postupovať nasledovne:
+1. **Pohovor:** Položte mi 2 alebo 3 zaujímavé, neobvyklé otázky o tom, ako rád trávim čas, ako riešim problémy a v akom prostredí sa mi darí. Cieľom je pomôcť mi objaviť moje „Ikigai“ (prienik toho, čo milujem, v čom som dobrý a čo svet potrebuje).
+2. **Prepojenie:** Keď odpoviem, prepojte môj štýl práce s 1 alebo 2 odbormi zo zoznamu vyššie (alebo s iným perspektívnym odborom, ktorý podľa vás sedí lepšie).
+3. **Hlbšie preskúmanie:** Navrhnite reálne, známe YouTube kanály alebo konkrétne vyhľadávacie frázy, ktoré si môžem vyhľadať, aby som videl „bežný deň“ človeka pracujúceho v danom odbore. (NEMYLTE SI ani nevymýšľajte konkrétne URL odkazy – uveďte iba presné názvy kanálov alebo vyhľadávacie dopyty).
+4. **Pohovor (Kľúčový krok):** Nezostaňte len pri poskytnutí týchto informácií. Na záver mi polože 1 alebo 2 cielene zamerané otázky, ktoré mi pomôžu lepšie si vybrať medzi týmito odbormi alebo objaviť špecifickú oblasť v rámci nich. Pýtajte sa na moju toleranciu voči frustrácii, ideálne pracovné prostredie alebo konkrétne problémy, ktoré chcem riešiť, aby sme mohli pokračovať v preskúmavaní.`;
       }
 
-      const wheelLines = res.wheel.map(x => `- **${x.f.name}**: ${x.f.what}`).join("\n");
-      const stretchLines = res.stretch.map(x => `- **${x.f.name}**: ${x.f.what} (*Why this?* ${stretchWhyText(x, res)})`).join("\n");
+      const wheelLines = res.wheel.map(x => { const f = getField(x.f.id); return `- **${f.name}**: ${f.what}`; }).join("\n");
+      const stretchLines = res.stretch.map(x => { const f = getField(x.f.id); return `- **${f.name}**: ${f.what} (*Why this?* ${stretchWhyText(x, res)})`; }).join("\n");
       const stretchBlock = res.stretch.length
         ? `\nFIELDS JUST OUTSIDE MY WHEELHOUSE (Fields I might be pleasantly surprised by):\n${stretchLines}\n`
         : "";
 
-      const lovedSubj = PORDER.filter(p => raw.subj[p] >= 70).map(p => PRIMS[p].name);
-      const dislikedSubj = PORDER.filter(p => raw.subj[p] <= 30).map(p => PRIMS[p].name);
-      const trueStmts = STATEMENTS.filter((s, i) => raw.disp[i] >= 70).map(s => `"${s.t}"`);
-      const falseStmts = STATEMENTS.filter((s, i) => raw.disp[i] <= 30).map(s => `"${s.t}"`);
+      const lovedSubj = PORDER.filter(p => raw.subj[p] >= 70).map(p => getPrim(p).name);
+      const dislikedSubj = PORDER.filter(p => raw.subj[p] <= 30).map(p => getPrim(p).name);
+      const trueStmts = STATEMENTS.filter((s, i) => raw.disp[i] >= 70).map((s, i) => `"${getStatement(i).t}"`);
+      const falseStmts = STATEMENTS.filter((s, i) => raw.disp[i] <= 30).map((s, i) => `"${getStatement(i).t}"`);
       
       let selfLines = "";
       if (lovedSubj.length) selfLines += `**Subjects I naturally enjoy:** ${lovedSubj.join(", ")}\n`;
@@ -1190,7 +1822,9 @@ Based on this profile, please give me a targeted breakdown by following exactly 
       try { await navigator.clipboard.writeText(ta.value); ok = true; } catch (e) { }
       if (!ok) { try { ta.focus(); ta.select(); ok = document.execCommand("copy"); } catch (e) { } }
       const msg = byId("copyMsg");
-      msg.textContent = ok ? "Copied ✓" : "Select the text and copy manually";
+      msg.textContent = ok
+        ? (currentLang === "sk" ? "Skopírované ✓" : "Copied ✓")
+        : (currentLang === "sk" ? "Označte text a skopírujte ho ručne" : "Select the text and copy manually");
       msg.classList.add("show");
       clearTimeout(msg._t); msg._t = setTimeout(() => msg.classList.remove("show"), 2200);
     });
@@ -1412,6 +2046,7 @@ Based on this profile, please give me a targeted breakdown by following exactly 
     function focusOnPrim(p) {
       Sound.press();
       focusPrim = p; clearHi();
+      const pLoc = getPrim(p);
       const activeIds = [p, ...anodes.filter(n => n.par.indexOf(p) >= 0).map(n => n.id)];
       zoomToActiveNodes(activeIds);
       anodes.forEach(n => { const on = n.par.indexOf(p) >= 0; nodeEls[n.id].g.classList.toggle("dim", !on); nodeEls[n.id].g.classList.toggle("show", on); });
@@ -1420,10 +2055,15 @@ Based on this profile, please give me a targeted breakdown by following exactly 
       [...legend.children].forEach(ch => { if (ch.dataset.p === p) { ch.classList.add("on"); ch.style.background = rgba(PRIMS[p].rgb, 0.9); ch.style.borderColor = "transparent"; ch.style.color = "#08101f"; } });
       resetBtn.classList.add("show");
       const count = anodes.filter(n => n.par.indexOf(p) >= 0).length;
-      panelIn.innerHTML = `<p class="p-kicker">School subject &middot; a foundation</p>
-      <h2 class="p-title" style="color:${rgb(PRIMS[p].rgb)}">${PRIMS[p].name}</h2>
-      <p class="p-what">${PRIMS[p].blurb}</p>
-      <div class="p-hook"><span class="lab">On the map</span>${count} field${count === 1 ? "" : "s"} are built partly from ${PRIMS[p].name}. They're lit now, the rest are dimmed. Tap any of them to see what it becomes.</div>`;
+      const kickerText = currentLang === "sk" ? "Školský predmet &middot; základ" : "School subject &middot; a foundation";
+      const labMapText = currentLang === "sk" ? "Na mape" : "On the map";
+      const fieldCountText = currentLang === "sk"
+        ? `${count} ${count === 1 ? "odbor vychádza" : (count >= 2 && count <= 4 ? "odbory vychádzajú" : "odborov vychádza")} čiastočne z predmetu ${pLoc.name}. Teraz sú zvýraznené, ostatné sú stmavené. Ťuknutím na ktorýkoľvek zistíte, čím sa stáva.`
+        : `${count} field${count === 1 ? "" : "s"} are built partly from ${pLoc.name}. They're lit now, the rest are dimmed. Tap any of them to see what it becomes.`;
+      panelIn.innerHTML = `<p class="p-kicker">${kickerText}</p>
+      <h2 class="p-title" style="color:${rgb(PRIMS[p].rgb)}">${pLoc.name}</h2>
+      <p class="p-what">${pLoc.blurb}</p>
+      <div class="p-hook"><span class="lab">${labMapText}</span>${fieldCountText}</div>`;
       panel.classList.add("open");
       panel.parentElement.classList.add("panel-open");
     }
@@ -1452,6 +2092,7 @@ Based on this profile, please give me a targeted breakdown by following exactly 
       focusPrim = null; clearHi();
       focusField = id;
       const n = anodes.find(x => x.id === id);
+      const fLoc = getField(id);
       const activeIds = [id, ...n.par];
       zoomToActiveNodes(activeIds);
       anodes.forEach(m => nodeEls[m.id].g.classList.toggle("dim", m.id !== id));
@@ -1460,16 +2101,22 @@ Based on this profile, please give me a targeted breakdown by following exactly 
       edgeEls.forEach(e => { if (e.field === id) e.el.classList.add("hot"); else e.el.classList.add("dim-edge"); });
       resetBtn.classList.add("show");
       const c = mix(n.par);
-      const chips = n.par.map(p => `<span class="m" data-p="${p}"><span class="sw" style="background:${rgb(PRIMS[p].rgb)}"></span>${PRIMS[p].name}</span>`).join("");
+      const kickerText = currentLang === "sk" ? "Odbor štúdia" : "Field of study";
+      const labObsessed = currentLang === "sk" ? "Čím je posadnutý" : "What it's obsessed with";
+      const labTuesday = currentLang === "sk" ? "Bežný utorok" : "On an ordinary Tuesday";
+      const labBuiltFrom = currentLang === "sk" ? "Zložený z" : "Built from";
+      const labColour = currentLang === "sk" ? "jeho farba" : "its colour";
+      const labDidYouKnow = currentLang === "sk" ? "Vedeli ste" : "Did you know";
+      const chips = n.par.map(p => `<span class="m" data-p="${p}"><span class="sw" style="background:${rgb(PRIMS[p].rgb)}"></span>${getPrim(p).name}</span>`).join("");
       const bar = n.par.map(p => `<span style="flex:1;background:${rgb(PRIMS[p].rgb)}"></span>`).join("");
-      panelIn.innerHTML = `<p class="p-kicker">Field of study</p>
-      <h2 class="p-title" style="color:${rgb(c)}">${n.name}</h2>
-      <p class="p-what">${n.what}</p>
-      <div class="p-row"><p class="p-lab">What it's obsessed with</p><p class="p-txt">${n.obsessed}</p></div>
-      <div class="p-row"><p class="p-lab">On an ordinary Tuesday</p><p class="p-txt">${n.tuesday}</p></div>
-      <div class="p-row"><p class="p-lab">Built from</p><div class="mix">${chips}</div>
-        <div class="mixline">its colour<div class="mixbar">${bar}</div></div></div>
-      <div class="p-hook"><span class="lab">Did you know</span>${n.hook}</div>`;
+      panelIn.innerHTML = `<p class="p-kicker">${kickerText}</p>
+      <h2 class="p-title" style="color:${rgb(c)}">${fLoc.name}</h2>
+      <p class="p-what">${fLoc.what}</p>
+      <div class="p-row"><p class="p-lab">${labObsessed}</p><p class="p-txt">${fLoc.obsessed}</p></div>
+      <div class="p-row"><p class="p-lab">${labTuesday}</p><p class="p-txt">${fLoc.tuesday}</p></div>
+      <div class="p-row"><p class="p-lab">${labBuiltFrom}</p><div class="mix">${chips}</div>
+        <div class="mixline">${labColour}<div class="mixbar">${bar}</div></div></div>
+      <div class="p-hook"><span class="lab">${labDidYouKnow}</span>${fLoc.hook}</div>`;
       panelIn.querySelectorAll(".mix .m").forEach(m => m.addEventListener("click", () => focusOnPrim(m.dataset.p)));
       panel.classList.add("open");
       panel.parentElement.classList.add("panel-open");
@@ -1483,11 +2130,22 @@ Based on this profile, please give me a targeted breakdown by following exactly 
       o.g.addEventListener("mouseleave", () => hoverNode(id, false));
       o.g.addEventListener("click", e => { e.stopPropagation(); o.isPrim ? focusOnPrim(id) : selectField(id); });
     });
-    PORDER.forEach(p => {
-      const b = document.createElement("button"); b.className = "chip"; b.dataset.p = p;
-      b.innerHTML = `<span class="dot" style="background:${rgb(PRIMS[p].rgb)}"></span>${PRIMS[p].name}`;
-      b.addEventListener("click", () => { focusPrim === p ? clearFocus() : focusOnPrim(p); }); legend.appendChild(b);
-    });
+
+    function refreshLegend() {
+      legend.innerHTML = "";
+      PORDER.forEach(p => {
+        const b = document.createElement("button"); b.className = "chip"; b.dataset.p = p;
+        if (focusPrim === p) {
+          b.classList.add("on");
+          b.style.background = rgba(PRIMS[p].rgb, 0.9);
+          b.style.borderColor = "transparent";
+          b.style.color = "#08101f";
+        }
+        b.innerHTML = `<span class="dot" style="background:${rgb(PRIMS[p].rgb)}"></span>${getPrim(p).name}`;
+        b.addEventListener("click", () => { focusPrim === p ? clearFocus() : focusOnPrim(p); }); legend.appendChild(b);
+      });
+    }
+    refreshLegend();
     byId("close").addEventListener("click", clearFocus);
     resetBtn.addEventListener("click", clearFocus);
     svg.addEventListener("click", e => { if (e.target === svg && focusPrim) clearFocus(); });
@@ -1658,7 +2316,7 @@ Based on this profile, please give me a targeted breakdown by following exactly 
         customCursor.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) translate(-50%, -50%) rotate(${currentAngle}rad) scale(${finalScaleX}, ${finalScaleY})`;
 
         // Determine dynamic color adoption
-        let cursorColor = "rgb(34, 211, 238)"; // default light blue
+        let cursorColor = "rgb(203, 182, 255)"; // pastel purple matching <em>thousand fields</em>
         let isGlowCustom = false;
 
         if (hoveredElement && hoveredElement.classList.contains("primary")) {
@@ -1684,7 +2342,7 @@ Based on this profile, please give me a targeted breakdown by following exactly 
           customCursor.style.boxShadow = `0 0 16px ${cursorColor}, 0 0 32px ${cursorColor}, 0 0 48px ${cursorColor}`;
         } else {
           customCursor.style.backgroundColor = "#ffffff";
-          customCursor.style.boxShadow = `0 0 12px rgba(59, 130, 246, 0.8), 0 0 24px rgba(139, 92, 246, 0.6), 0 0 36px rgba(34, 211, 238, 0.4)`;
+          customCursor.style.boxShadow = `0 0 12px rgba(203, 182, 255, 0.8), 0 0 24px rgba(139, 92, 246, 0.6), 0 0 36px rgba(203, 182, 255, 0.4)`;
         }
       }
       requestAnimationFrame(updateCustomCursor);
@@ -1865,6 +2523,43 @@ Based on this profile, please give me a targeted breakdown by following exactly 
     }
     
     activatePhysics();
+
+    function setLanguage(lang) {
+      currentLang = (lang === "sk") ? "sk" : "en";
+      try { localStorage.setItem("prism_lang", currentLang); } catch (e) {}
+
+      document.querySelectorAll(".lang-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === currentLang);
+      });
+
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.dataset.i18n;
+        if (I18N_STATIC[currentLang] && I18N_STATIC[currentLang][key]) {
+          el.innerHTML = I18N_STATIC[currentLang][key];
+        }
+      });
+
+      refreshQuizSliders();
+      refreshLegend();
+
+      if (lastRes) {
+        renderResults(lastRes);
+      } else {
+        renderFutureZone(true);
+      }
+
+      if (focusPrim) {
+        focusOnPrim(focusPrim);
+      } else if (focusField) {
+        selectField(focusField);
+      }
+    }
+
+    document.querySelectorAll(".lang-btn").forEach(btn => {
+      btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
+    });
+
+    setLanguage(currentLang);
 
     showView("home");
   })();

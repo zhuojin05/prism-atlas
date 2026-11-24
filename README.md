@@ -4,9 +4,11 @@
 
 > **An academic atlas of some interdisciplinary fields I wish I had back in high school.**
 
+🌐 **Live App:** **[https://zhuojin05.github.io/prism-atlas/](https://zhuojin05.github.io/prism-atlas/)**
+
 School shows you ten subjects. It hides a thousand fields. Exciting modern fields are often combinations of the core subjects you already know. Prism helps you see how they connect.
 
-This is a lightweight Python + Web application served locally.
+This is a lightweight static web application (also servable locally via Python/FastAPI).
 
 ---
 
@@ -25,7 +27,7 @@ uv run main.py
 Then open your browser to:
 👉 **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
 
-*(Note: You can also just double-click **[prism.html](prism.html)** directly in your Finder to open and run the app offline!)*
+*(Note: You can also just double-click **[index.html](index.html)** directly in your Finder to open and run the app offline!)*
 
 ---
 
@@ -33,8 +35,8 @@ Then open your browser to:
 
 ```
 .
-├── main.py             # FastAPI backend to serve the files
-├── prism.html          # Clean HTML5 markup
+├── main.py             # FastAPI backend to serve the files locally
+├── index.html          # Clean HTML5 markup
 ├── prism.css           # Modular stylesheet and custom scrollbars
 ├── prism.js            # Synthesizers, physics, and viewport logic
 └── prism-design-brief.md # Original spec & design specs

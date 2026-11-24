@@ -12,11 +12,11 @@ app = FastAPI(
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
-    """Serves the interactive web app prism.html at the root URL."""
-    html_path = os.path.join(os.path.dirname(__file__), "prism.html")
+    """Serves the interactive web app index.html at the root URL."""
+    html_path = os.path.join(os.path.dirname(__file__), "index.html")
     if not os.path.exists(html_path):
         return HTMLResponse(
-            content="<h1>Error</h1><p>prism.html file not found in the project root.</p>",
+            content="<h1>Error</h1><p>index.html file not found in the project root.</p>",
             status_code=404
         )
     return FileResponse(html_path)

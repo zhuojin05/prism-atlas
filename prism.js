@@ -1309,13 +1309,16 @@
       STATEMENTS.forEach((s, i) => dispWrap.appendChild(sliderRow("disp_" + i, getStatement(i).t, labelNotMe, labelVeryMe)));
     }
     buildQuizSliders();
+    let sliderAbort = null;
     function refreshQuizSliders() {
       const values = {};
       allQuizSliders().forEach(s => values[s.id] = s.value);
+      if (sliderAbort) sliderAbort.abort();
+      sliderAbort = new AbortController();
       buildQuizSliders();
       allQuizSliders().forEach(s => {
         if (values[s.id] !== undefined) s.value = values[s.id];
-        wireSlider(s);
+        wireSlider(s, sliderAbort.signal);
         styleSlider(s);
       });
     }
@@ -1326,7 +1329,7 @@
     function sliderRGB(id) { return subjColor[id] || dispColor[id] || [59, 130, 246]; }
 
     const Sound = (function () {
-      let ctx = null, master = null, dry = null, wet = null, conv = null, on = true;
+      let ctx = null, master = null, dry = null, wet = null, conv = null, on = true, unlocked = false, resumePromise = null;
       function impulse(dur, decay) {
         const rate = ctx.sampleRate, len = Math.max(1, Math.floor(rate * dur));
         const buf = ctx.createBuffer(2, len, rate);
@@ -1336,24 +1339,70 @@
         }
         return buf;
       }
-      function ensure() {
-        if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
-        try {
-          const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-          ctx = new AC();
-          master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination);
-          dry = ctx.createGain(); dry.gain.value = 0.5; dry.connect(master);
-          conv = ctx.createConvolver(); conv.buffer = impulse(2.8, 2.2);
-          wet = ctx.createGain(); wet.gain.value = 0.62; conv.connect(wet); wet.connect(master);
-        } catch (e) { ctx = null; }
+      function connectOut(node) {
+        node.connect(dry);
+        if (conv) node.connect(conv);
+      }
+      function ensure(fromGesture = false) {
+        if (!ctx && !fromGesture) return null;
+        if (!ctx) {
+          try {
+            if (navigator.audioSession && navigator.audioSession.type !== "playback") {
+              try { navigator.audioSession.type = "playback"; } catch (e) {}
+            }
+            const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+            ctx = new AC();
+            master = ctx.createGain(); master.gain.value = on ? 0.5 : 0.0001; master.connect(ctx.destination);
+            dry = ctx.createGain(); dry.gain.value = 0.5; dry.connect(master);
+            try {
+              conv = ctx.createConvolver(); conv.buffer = impulse(2.8, 2.2);
+              wet = ctx.createGain(); wet.gain.value = 0.62; conv.connect(wet); wet.connect(master);
+            } catch (e) { conv = null; wet = null; }
+          } catch (e) { ctx = null; return null; }
+        }
+        if (!ctx) return null;
+        if (fromGesture) {
+          if (navigator.audioSession && navigator.audioSession.type !== "playback") {
+            try { navigator.audioSession.type = "playback"; } catch (e) {}
+          }
+          if (!unlocked || ctx.state !== "running") {
+            try {
+              const b = ctx.createBuffer(1, 1, ctx.sampleRate);
+              const s = ctx.createBufferSource();
+              s.buffer = b;
+              s.connect(ctx.destination);
+              s.start(0);
+            } catch (e) {}
+          }
+          if (ctx.state !== "running") {
+            if (!resumePromise) {
+              resumePromise = Promise.resolve(ctx.resume()).then(() => {
+                resumePromise = null;
+                if (ctx && ctx.state === "running") unlocked = true;
+              }).catch(() => {
+                resumePromise = null;
+              });
+            }
+            return resumePromise;
+          }
+          unlocked = true;
+          return Promise.resolve();
+        }
+        return ctx.state === "running" ? Promise.resolve() : null;
+      }
+      function withRunning(fn) {
+        const p = ensure(true);
+        if (!ctx || !on) return;
+        if (ctx.state === "running") { fn(); return; }
+        if (p) p.then(() => { if (ctx && ctx.state === "running" && on) fn(); }).catch(() => {});
       }
       const INTERVALS = [0, 7, 12, 16, 19, 24];              // root, 5th, 8ve, maj10, 12th, 2-8ve
       const semiRatio = s => Math.pow(2, s / 12);
       function makePad(f0) {
-        ensure(); if (!ctx) return null;
+        const p = ensure(true); if (!ctx || !on) return null;
         const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 650; lp.Q.value = 0.5;
         const padGain = ctx.createGain(); padGain.gain.value = 0.0001;
-        lp.connect(padGain); padGain.connect(dry); padGain.connect(conv);
+        lp.connect(padGain); connectOut(padGain);
         const voices = INTERVALS.map((s, i) => {
           const f = f0 * semiRatio(s);
           const vg = ctx.createGain(); vg.gain.value = 0.0001; vg.connect(lp);
@@ -1364,10 +1413,17 @@
           });
           return { vg, oscs };
         });
-        return { lp, padGain, voices, alive: true };
+        const pad = { lp, padGain, voices, alive: true, lastT: null };
+        if (ctx.state !== "running" && p) {
+          p.then(() => { if (pad.alive && pad.lastT !== null) updatePad(pad, pad.lastT); }).catch(() => {});
+        }
+        return pad;
       }
       function updatePad(pad, t) {
-        if (!pad || !ctx || !pad.alive) return; const now = ctx.currentTime;
+        if (!pad || !ctx || !pad.alive) return;
+        pad.lastT = t;
+        if (ctx.state !== "running") ensure(true);
+        const now = ctx.currentTime;
         pad.padGain.gain.setTargetAtTime(0.05 + 0.22 * t, now, 0.12);        // loudness swells
         pad.lp.frequency.setTargetAtTime(600 + 4600 * t, now, 0.08);         // opens up / brightens
         pad.voices.forEach((v, i) => {                                    // higher voices fade in
@@ -1384,7 +1440,7 @@
       }
       let lastHover = 0;
       function hover(freq) {
-        ensure(); if (!ctx || !on) return;
+        if (!ctx || ctx.state !== "running" || !on) return;
         const w = performance.now(); if (w - lastHover < 70) return; lastHover = w;
         const t = ctx.currentTime;
         const g = ctx.createGain();
@@ -1394,39 +1450,40 @@
         const o1 = ctx.createOscillator(); o1.type = "sine"; o1.frequency.value = freq;
         const o2 = ctx.createOscillator(); o2.type = "sine"; o2.frequency.value = freq * 2.01;   // shimmer
         const o2g = ctx.createGain(); o2g.gain.value = 0.4; o2.connect(o2g);
-        o1.connect(g); o2g.connect(g); g.connect(dry); g.connect(conv);
+        o1.connect(g); o2g.connect(g); connectOut(g);
         o1.start(t); o2.start(t); o1.stop(t + 0.55); o2.stop(t + 0.55);
       }
       function press() {
-        ensure(); if (!ctx || !on) return;
-        const t = ctx.currentTime;
-        // soft low thump: the felt/rubber give of a membrane key bottoming out
-        const thump = ctx.createOscillator(); thump.type = "sine";
-        thump.frequency.setValueAtTime(220, t);
-        thump.frequency.exponentialRampToValueAtTime(150, t + 0.05);
-        const thumpGain = ctx.createGain();
-        thumpGain.gain.setValueAtTime(0.0001, t);
-        thumpGain.gain.exponentialRampToValueAtTime(0.11, t + 0.006);
-        thumpGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
-        thump.connect(thumpGain); thumpGain.connect(dry);
-        // brief filtered noise: the tactile texture of a press, not a pure tone
-        const len = Math.floor(ctx.sampleRate * 0.03);
-        const buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
-        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2);
-        const noise = ctx.createBufferSource(); noise.buffer = buf;
-        const nf = ctx.createBiquadFilter(); nf.type = "lowpass"; nf.frequency.value = 1100; nf.Q.value = 0.6;
-        const noiseGain = ctx.createGain(); noiseGain.gain.value = 0.045;
-        noise.connect(nf); nf.connect(noiseGain); noiseGain.connect(dry);
-        // faint shimmer, the one thread tying this back to the pad and the hover chime
-        const shim = ctx.createOscillator(); shim.type = "sine"; shim.frequency.value = 880;
-        const shimGain = ctx.createGain();
-        shimGain.gain.setValueAtTime(0.0001, t);
-        shimGain.gain.exponentialRampToValueAtTime(0.018, t + 0.012);
-        shimGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
-        shim.connect(shimGain); shimGain.connect(dry); shimGain.connect(conv);
-        thump.start(t); thump.stop(t + 0.12);
-        noise.start(t); noise.stop(t + 0.03);
-        shim.start(t); shim.stop(t + 0.32);
+        withRunning(() => {
+          const t = ctx.currentTime;
+          // soft low thump: the felt/rubber give of a membrane key bottoming out
+          const thump = ctx.createOscillator(); thump.type = "sine";
+          thump.frequency.setValueAtTime(220, t);
+          thump.frequency.exponentialRampToValueAtTime(150, t + 0.05);
+          const thumpGain = ctx.createGain();
+          thumpGain.gain.setValueAtTime(0.0001, t);
+          thumpGain.gain.exponentialRampToValueAtTime(0.11, t + 0.006);
+          thumpGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+          thump.connect(thumpGain); thumpGain.connect(dry);
+          // brief filtered noise: the tactile texture of a press, not a pure tone
+          const len = Math.floor(ctx.sampleRate * 0.03);
+          const buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+          for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2);
+          const noise = ctx.createBufferSource(); noise.buffer = buf;
+          const nf = ctx.createBiquadFilter(); nf.type = "lowpass"; nf.frequency.value = 1100; nf.Q.value = 0.6;
+          const noiseGain = ctx.createGain(); noiseGain.gain.value = 0.045;
+          noise.connect(nf); nf.connect(noiseGain); noiseGain.connect(dry);
+          // faint shimmer, the one thread tying this back to the pad and the hover chime
+          const shim = ctx.createOscillator(); shim.type = "sine"; shim.frequency.value = 880;
+          const shimGain = ctx.createGain();
+          shimGain.gain.setValueAtTime(0.0001, t);
+          shimGain.gain.exponentialRampToValueAtTime(0.018, t + 0.012);
+          shimGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+          shim.connect(shimGain); connectOut(shimGain);
+          thump.start(t); thump.stop(t + 0.12);
+          noise.start(t); noise.stop(t + 0.03);
+          shim.start(t); shim.stop(t + 0.32);
+        });
       }
 
       function playOrganNote(freq, start, duration, maxVolume) {
@@ -1447,8 +1504,7 @@
         voiceGain.gain.exponentialRampToValueAtTime(0.0001, end);
 
         filter.connect(voiceGain);
-        voiceGain.connect(dry);
-        voiceGain.connect(conv);
+        connectOut(voiceGain);
 
         const harmonics = [
           { mult: 1, type: "triangle", gain: 0.35, detune: -6 },
@@ -1475,21 +1531,22 @@
       }
 
       function playOrganTransition() {
-        ensure(); if (!ctx || !on) return;
-        const chord1 = [130.81, 196.00, 293.66, 392.00, 523.25, 587.33];
-        const chord2 = [130.81, 196.00, 329.63, 493.88, 587.33, 783.99];
+        withRunning(() => {
+          const chord1 = [130.81, 196.00, 293.66, 392.00, 523.25, 587.33];
+          const chord2 = [130.81, 196.00, 329.63, 493.88, 587.33, 783.99];
 
-        chord1.forEach(freq => {
-          playOrganNote(freq, 0, 2.5, 0.05);
-        });
-        chord2.forEach(freq => {
-          playOrganNote(freq, 1.2, 3.8, 0.04);
+          chord1.forEach(freq => {
+            playOrganNote(freq, 0, 2.5, 0.05);
+          });
+          chord2.forEach(freq => {
+            playOrganNote(freq, 1.2, 3.8, 0.04);
+          });
         });
       }
 
       return {
-        wake: ensure, makePad, updatePad, release, hover, press, playOrganTransition,
-        toggle() { on = !on; ensure(); if (ctx && master) master.gain.setTargetAtTime(on ? 0.5 : 0.0001, ctx.currentTime, 0.06); return on; },
+        wake: () => ensure(true), makePad, updatePad, release, hover, press, playOrganTransition,
+        toggle() { on = !on; ensure(true); if (ctx && master) master.gain.setTargetAtTime(on ? 0.5 : 0.0001, ctx.currentTime, 0.06); return on; },
         isOn() { return on; }
       };
     })();
@@ -1511,29 +1568,38 @@
       const off = PENTA[((idx % PENTA.length) + PENTA.length) % PENTA.length];
       return PROOT * Math.pow(2, off / 12);
     }
-    function wireSlider(input) {
+    function wireSlider(input, signal) {
       styleSlider(input);
+      const opts = signal ? { signal } : undefined;
       let pad = null;
       function start() {
         Sound.wake(); if (pad && pad.alive) return;
         pad = Sound.makePad(rootFor(input.id)); Sound.updatePad(pad, (+input.value) / 100); haptic(10);
       }
-      function move() { styleSlider(input); if (pad && pad.alive) Sound.updatePad(pad, (+input.value) / 100); }
+      function move() {
+        styleSlider(input);
+        if (pad && pad.alive) { Sound.wake(); Sound.updatePad(pad, (+input.value) / 100); }
+      }
       function end() { if (pad) { Sound.release(pad); pad = null; haptic(12); } }
-      input.addEventListener("pointerdown", start);
-      input.addEventListener("input", move);
-      input.addEventListener("pointerup", end);
-      input.addEventListener("pointercancel", end);
-      input.addEventListener("lostpointercapture", end);
-      input.addEventListener("blur", end);
-      window.addEventListener("pointerup", end);          // catch release outside the handle
+      input.addEventListener("pointerdown", start, opts);
+      input.addEventListener("mousedown", start, opts);
+      input.addEventListener("touchstart", start, signal ? { signal, passive: true } : { passive: true });
+      input.addEventListener("input", move, opts);
+      input.addEventListener("pointerup", end, opts);
+      input.addEventListener("pointercancel", end, opts);
+      input.addEventListener("lostpointercapture", end, opts);
+      input.addEventListener("touchend", end, opts);
+      input.addEventListener("blur", end, opts);
+      window.addEventListener("pointerup", end, opts);          // catch release outside the handle
+      window.addEventListener("touchend", end, opts);
       input.addEventListener("keydown", () => {
         start(); styleSlider(input);
         clearTimeout(input._kt); input._kt = setTimeout(end, 800);
-      });   // keyboard swell then fade
+      }, opts);   // keyboard swell then fade
     }
     const allQuizSliders = () => document.querySelectorAll("#subjSliders input[type=range], #dispSliders input[type=range]");
-    allQuizSliders().forEach(wireSlider);
+    sliderAbort = new AbortController();
+    allQuizSliders().forEach(s => wireSlider(s, sliderAbort.signal));
 
     const soundBtn = byId("soundToggle");
     const soundTxt = byId("soundToggleTxt");
@@ -2162,7 +2228,9 @@ Based on this profile, please give me a targeted breakdown by following exactly 
       setTimeout(() => gEdges.style.opacity = 1, 500);
     }
 
-    document.addEventListener("pointerdown", () => Sound.wake());
+    ["pointerdown", "mousedown", "touchstart", "touchend", "click", "keydown"].forEach(evt => {
+      window.addEventListener(evt, () => Sound.wake(), { capture: true, passive: true });
+    });
 
     // ============ CUSTOM GLOWING POINTER ============
     const customCursor = byId("custom-cursor");
@@ -2538,6 +2606,12 @@ Based on this profile, please give me a targeted breakdown by following exactly 
           el.innerHTML = I18N_STATIC[currentLang][key];
         }
       });
+
+      const sBtn = byId("soundToggle"), sTxt = byId("soundToggleTxt");
+      if (sBtn) sBtn.classList.toggle("off", !Sound.isOn());
+      if (sTxt) sTxt.textContent = Sound.isOn()
+        ? (I18N_STATIC[currentLang].sound_on || "Sound on")
+        : (I18N_STATIC[currentLang].sound_off || "Sound off");
 
       refreshQuizSliders();
       refreshLegend();

@@ -27,7 +27,7 @@ uv run main.py
 Then open your browser to:
 👉 **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
 
-*(Note: You can also just double-click **[index.html](index.html)** directly in your Finder to open and run the app offline!)*
+*(Note: You can also just double-click **[index.html](index.html)** directly in your Finder/File Manager to open and run the app offline!)*
 
 ---
 
